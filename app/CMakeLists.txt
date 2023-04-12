@@ -254,6 +254,8 @@ endif()
 add_library(tfm_test_app STATIC EXCLUDE_FROM_ALL)
 
 target_sources(tfm_test_app
+    PUBLIC
+        $<$<BOOL:${CONFIG_GNU_SYSCALL_STUB_ENABLED}>:${CMAKE_SOURCE_DIR}/platform/ext/common/syscalls_stub.c>
     PRIVATE
         test_app.c
 )
