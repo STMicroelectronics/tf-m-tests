@@ -26,6 +26,9 @@
 #include "cmsis.h"
 #endif
 
+#include <tfm_platform_system.h>
+#include <uapi/tfm_ioctl_api.h>
+
 /**
  * \brief Modified table template for user defined SVC functions
  *
@@ -139,6 +142,55 @@ __WEAK int32_t tfm_ns_cp_init(void)
     return ARM_DRIVER_OK;
 }
 
+__WEAK const char *cpu_status_str[] = {
+	"offline",
+	"suspended",
+	"running",
+	"crashed",
+	"unknow",
+};
+
+void tfm_ns_start_copro(void *argument)
+{
+	struct cpu_info_res cpu_info;
+	int32_t status, err;
+
+	UNUSED_VARIABLE(argument);
+
+	err = tfm_platform_cpu_info(0, &cpu_info);
+	if (err != TFM_PLATFORM_ERR_SUCCESS) {
+		LOG_MSG("[NS] [ERR] get cpu 0 info fail: %d\r\n", err);
+		return;
+	}
+
+	if (cpu_info.status != CPU_OFFLINE) {
+		LOG_MSG("[NS] [INF] cpu %s already started\r\n", cpu_info.name);
+		LOG_MSG("[NS] [INF] cpu %s status: %s\r\n",
+			cpu_info.name, cpu_status_str[cpu_info.status]);
+		return;
+	}
+
+	LOG_MSG("[NS] [INF] try to start cpu %s: ", cpu_info.name);
+
+	err = tfm_platform_cpu_start(0, &status);
+	if (err != TFM_PLATFORM_ERR_SUCCESS || status != CPU_RUNNING) {
+		LOG_MSG("cpu start fail err: %d\r\n", err);
+		return;
+	}
+
+	LOG_MSG("done\r\n");
+}
+
+#ifdef STM32_M33TDCID
+static osThreadFunc_t ca35_thread_func = tfm_ns_start_copro;
+static const osThreadAttr_t ca35_thread_attr = {
+    .name = "CA35_thread",
+    .stack_size = 1024U,
+    .tz_module = ((TZ_ModuleId_t)TFM_DEFAULT_NSID),
+    .priority = osPriorityHigh,
+};
+#endif
+
 /**
  * \brief main() function
  */
@@ -170,6 +222,10 @@ int main(void)
 
 #ifdef TFM_MULTI_CORE_NS_OS_MAILBOX_THREAD
     (void) osThreadNew(mailbox_thread_func, NULL, &mailbox_thread_attr);
+#endif
+
+#ifdef STM32_M33TDCID
+    (void) osThreadNew(ca35_thread_func, NULL, &ca35_thread_attr);
 #endif
 
     (void) osThreadNew(thread_func, NULL, &thread_attr);

@@ -293,6 +293,7 @@ target_sources(tfm_ns
 
 target_link_libraries(tfm_ns
     PRIVATE
+        platform_region_defs
         platform_ns
         CMSIS_5_tfm_ns
         tfm_test_app
