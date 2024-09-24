@@ -142,6 +142,7 @@ __WEAK int32_t tfm_ns_cp_init(void)
     return ARM_DRIVER_OK;
 }
 
+#ifdef STM32_M33TDCID
 __WEAK const char *cpu_status_str[] = {
 	"offline",
 	"suspended",
@@ -181,7 +182,6 @@ void tfm_ns_start_copro(void *argument)
 	LOG_MSG("done\r\n");
 }
 
-#ifdef STM32_M33TDCID
 static osThreadFunc_t ca35_thread_func = tfm_ns_start_copro;
 static const osThreadAttr_t ca35_thread_attr = {
     .name = "CA35_thread",
