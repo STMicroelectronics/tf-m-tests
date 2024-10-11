@@ -24,7 +24,8 @@
 #if (CONFIG_TFM_FLOAT_ABI >= 1)
 #include "cmsis.h"
 #endif
-
+#include "thread.h"
+#include "semaphore.h"
 #include <tfm_platform_system.h>
 #include <uapi/tfm_ioctl_api.h>
 #include <wdt_task.h>
@@ -55,7 +56,8 @@ __asm("  .global __ARM_use_no_argv\n");
 static const osThreadAttr_t thread_attr = {
     .name = "test_thread",
     .stack_size = 4096U,
-    .tz_module = ((TZ_ModuleId_t)TFM_DEFAULT_NSID)
+    .tz_module = ((TZ_ModuleId_t)TFM_DEFAULT_NSID),
+    .priority = osPriorityNormal
 };
 /**
  * \brief Static globals to hold RTOS related quantities,
@@ -223,6 +225,18 @@ static const osThreadAttr_t ca35_thread_attr = {
     .priority = osPriorityHigh,
 };
 #endif
+extern void tfm_ns_sec_process(void *arg);
+/**
+ * \brief List of RTOS thread attributes
+ */
+static osThreadFunc_t ns_sec_thread_func = tfm_ns_sec_process;
+static const osThreadAttr_t ns_secure_thread_attr = {
+    .name = "sec_thread",
+    .stack_size = 1024U,
+    .tz_module = ((TZ_ModuleId_t)TFM_DEFAULT_NSID),
+    .priority = osPriorityHigh,
+};
+
 
 /**
  * \brief main() function
@@ -249,6 +263,11 @@ int main(void)
 #else
     /* Initialize the TFM NS interface */
     tfm_ns_interface_init();
+#if PLATFORM_HAS_NS_NOTIF
+    tfm_ns_init_secure_event();
+    (void) osThreadNew(ns_sec_thread_func, NULL, &ns_secure_thread_attr);
+#endif
+
 #endif
 
 #ifdef TFM_MULTI_CORE_NS_OS_MAILBOX_THREAD
