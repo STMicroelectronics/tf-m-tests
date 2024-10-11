@@ -161,6 +161,12 @@ void tfm_ns_start_copro(void *argument)
 		return;
 	}
 
+	if (cpu_info.status < 0 || cpu_info.status >= CPU_LAST) {
+		LOG_MSG("[NS] [ERR] cpu %s error %d\r\n",
+                        cpu_info.name, cpu_info.status);
+		return;
+	}
+
 	if (cpu_info.status != CPU_OFFLINE) {
 		LOG_MSG("[NS] [INF] cpu %s already started\r\n", cpu_info.name);
 		LOG_MSG("[NS] [INF] cpu %s status: %s\r\n",
