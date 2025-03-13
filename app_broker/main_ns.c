@@ -143,6 +143,7 @@ __WEAK int32_t tfm_ns_cp_init(void)
 __WEAK const char *cpu_status_str[] = {
 	"offline",
 	"suspended",
+	"started",
 	"running",
 	"crashed",
 	"unknow",
@@ -152,6 +153,7 @@ void tfm_ns_start_copro(void *argument)
 {
 	struct cpu_info_res cpu_info;
 	int32_t status, err;
+	uint32_t start, ticks;
 
 	UNUSED_VARIABLE(argument);
 
@@ -177,12 +179,42 @@ void tfm_ns_start_copro(void *argument)
 	LOG_MSG("[NS] [INF] try to start cpu %s: ", cpu_info.name);
 
 	err = tfm_platform_cpu_start(0, &status);
-	if (err != TFM_PLATFORM_ERR_SUCCESS || status != CPU_RUNNING) {
+	if (err != TFM_PLATFORM_ERR_SUCCESS) {
 		LOG_MSG("cpu start fail err: %d\r\n", err);
 		return;
 	}
 
-	LOG_MSG("done\r\n");
+	/* Polling status */
+	start = osKernelGetTickCount();
+	while (status == CPU_STARTED) {
+		err = tfm_platform_cpu_info(0, &cpu_info);
+		if (err == TFM_PLATFORM_ERR_SUCCESS) {
+			status = cpu_info.status;
+                } else {
+			LOG_MSG("get cpu 0 info fail: %d ", err);
+			status = CPU_LAST;
+			break;
+		}
+		/* Check end of 1s timeout */
+		ticks = osKernelGetTickCount();
+		if (ticks - start > osKernelGetTickFreq()) {
+			LOG_MSG("timeout ");
+			break;
+		}
+	}
+
+	if (status == CPU_RUNNING) {
+		LOG_MSG("done\r\n");
+	} else {
+		LOG_MSG("failed\r\n");
+		LOG_MSG("[NS] [INF] cpu %s status: %s\r\n",
+			cpu_info.name, cpu_status_str[status]);
+		err = tfm_platform_cpu_stop(0, &status);
+		if (err != TFM_PLATFORM_ERR_SUCCESS) {
+			LOG_MSG("cpu stop fail err: %d\r\n", err);
+			return;
+		}
+	}
 }
 
 static osThreadFunc_t ca35_thread_func = tfm_ns_start_copro;
