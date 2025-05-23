@@ -104,6 +104,11 @@ if (CONFIG_TFM_SPM_BACKEND_SFN AND TEST_S)
     set(TEST_S_SFN_BACKEND      ON        CACHE BOOL      "Whether to build S regression SFN backend tests")
 endif()
 
+########################## NS EVT  test #################################
+
+if (PLATFORM_HAS_NS_NOTIF)
+  set(TEST_NS_NS_EVT          ON          CACHE BOOL      "Whether to build NS regression NS EVT tests")
+endif()
 ########################## Load default config #################################
 
 if (TEST_S)
@@ -118,6 +123,11 @@ if (TEST_NS_IPC OR TEST_S_IPC)
     set(TFM_PARTITION_IPC_TEST  ON)
 else()
     set(TFM_PARTITION_IPC_TEST  OFF)
+endif()
+if (TEST_NS_NS_EVT)
+  set(TFM_PARTITION_NS_EVT_TEST ON)
+else()
+  set(TFM_PARTITION_NS_EVT_TEST OFF)
 endif()
 
 if (TEST_NS_PS OR TEST_S_PS)
@@ -166,6 +176,7 @@ list(APPEND TFM_EXTRA_PARTITION_PATHS
      ${SECURE_FW_REG_DIR}/suites/spm/irq/service
      ${SECURE_FW_REG_DIR}/suites/ps/service
      ${SECURE_FW_REG_DIR}/suites/fpu/service
+     ${SECURE_FW_REG_DIR}/suites/spm/ns_evt/service
 )
 
 if(TFM_S_REG_TEST)

@@ -140,5 +140,34 @@
         ]
       }
     },
+     {
+      "description": "TFM NS_EVT Test Partition",
+      "manifest": "suites/spm/ns_evt/service/tfm_ns_evt_service/tfm_ns_evt_service_test.yaml",
+      "output_path": "secure_fw/test_services/tfm_ns_evt_service",
+      "conditional": "TFM_PARTITION_NS_EVT_TEST",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3012,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_ns_evt_service.*"
+         ]
+      }
+    },
+    {
+      "description": "TFM NS_EVT Helper Test Partition",
+      "manifest": "suites/spm/ns_evt/service/tfm_ns_evt_helper/tfm_ns_evt_helper_test.yaml",
+      "output_path": "secure_fw/test_services/tfm_ns_evt_helper",
+      "conditional": "TFM_PARTITION_NS_EVT_TEST",
+      "version_major": 0,
+      "version_minor": 1,
+      "pid": 3013,
+      "linker_pattern": {
+        "library_list": [
+           "*tfm_*partition_ns_evt_helper.*"
+         ]
+      },
+      "non_ffm_attributes": ['weak_dependencies']
+    },
   ]
 }

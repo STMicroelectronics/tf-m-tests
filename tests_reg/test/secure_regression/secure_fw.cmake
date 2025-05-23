@@ -27,6 +27,7 @@ include(utils)
         TEST_NS_MANAGE_NSID;
         TEST_NS_SFN_BACKEND;
         TEST_NS_FPU;
+        TEST_NS_NS_EVT
         TEST_S_ATTESTATION;
         TEST_S_CRYPTO;
         TEST_S_ITS;
