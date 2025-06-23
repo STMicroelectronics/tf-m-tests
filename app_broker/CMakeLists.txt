@@ -181,6 +181,7 @@ add_library(tfm_test_broker STATIC)
 target_sources(tfm_test_broker
     PRIVATE
         main_ns.c
+        $<$<BOOL:${TFM_PLATFORM_WDT_API}>:wdt_task.c>
 )
 
 target_include_directories(tfm_test_broker
@@ -203,4 +204,5 @@ target_compile_definitions(tfm_test_broker
     PUBLIC
         $<$<BOOL:${TFM_NS_REG_TEST}>:TFM_NS_REG_TEST>
         $<$<BOOL:${TFM_NS_MAILBOX_API}>:TFM_NS_MAILBOX_API>
+        $<$<BOOL:${TFM_PLATFORM_WDT_API}>:TFM_PLATFORM_WDT_API>
 )

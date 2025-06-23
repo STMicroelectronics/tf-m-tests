@@ -27,6 +27,7 @@
 
 #include <tfm_platform_system.h>
 #include <uapi/tfm_ioctl_api.h>
+#include <wdt_task.h>
 
 /**
  * \brief Modified table template for user defined SVC functions
@@ -176,7 +177,6 @@ void tfm_ns_start_copro(void *argument)
 		return;
 	}
 
-
 	err = tfm_platform_cpu_start(0, &status);
 	if (err != TFM_PLATFORM_ERR_SUCCESS) {
 		LOG_MSG("cpu start fail err: %d\r\n", err);
@@ -262,6 +262,10 @@ int main(void)
     (void) osThreadNew(thread_func, NULL, &thread_attr);
 
     LOG_MSG("Non-Secure system starting...\r\n");
+
+    if (IS_ENABLED(TFM_PLATFORM_WDT_API))
+	    wdt_init();
+
     (void) osKernelStart();
 
     /* Reached only in case of error */
