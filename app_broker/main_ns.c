@@ -176,7 +176,6 @@ void tfm_ns_start_copro(void *argument)
 		return;
 	}
 
-	LOG_MSG("[NS] [INF] try to start cpu %s: ", cpu_info.name);
 
 	err = tfm_platform_cpu_start(0, &status);
 	if (err != TFM_PLATFORM_ERR_SUCCESS) {
@@ -204,14 +203,13 @@ void tfm_ns_start_copro(void *argument)
 	}
 
 	if (status == CPU_RUNNING) {
-		LOG_MSG("done\r\n");
+		LOG_MSG("[NS] [INF] cpu %s started\r\n", cpu_info.name);
 	} else {
-		LOG_MSG("failed\r\n");
-		LOG_MSG("[NS] [INF] cpu %s status: %s\r\n",
-			cpu_info.name, cpu_status_str[status]);
+		LOG_MSG("[NS] [ERR] cpu %s start failed status: %s\r\n", cpu_info.name,
+			cpu_status_str[status]);
 		err = tfm_platform_cpu_stop(0, &status);
 		if (err != TFM_PLATFORM_ERR_SUCCESS) {
-			LOG_MSG("cpu stop fail err: %d\r\n", err);
+			LOG_MSG("[NS] [ERR] cpu %s stop fail err: %d\r\n", cpu_info.name, err);
 			return;
 		}
 	}
