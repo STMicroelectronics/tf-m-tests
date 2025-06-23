@@ -75,6 +75,8 @@ target_link_libraries(tfm_s_tests
 target_compile_definitions(tfm_s_tests
     PRIVATE
         $<$<BOOL:${PS_TEST_NV_COUNTERS}>:PS_TEST_NV_COUNTERS>
+	$<$<BOOL:${TFM_PLATFORM_WDT_API}>:TFM_PLATFORM_WDT_API>
+	TEST_S
 )
 
 add_subdirectory(${SECURE_FW_REG_DIR}/secure

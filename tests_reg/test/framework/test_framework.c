@@ -11,6 +11,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(TEST_S) && defined(TFM_PLATFORM_WDT_API)
+#include <tfm_platform_system.h>
+#include <uapi/tfm_ioctl_api.h>
+#endif
+
 static void test_failed(const struct test_result_t *ret, const char *name)
 {
     printf_set_color(RED);
@@ -50,6 +55,17 @@ const char *test_err_to_str(enum test_suite_err_t err)
      *           covered in the switch.
      */
     }
+}
+
+void pre_test(void)
+{
+#if defined(TEST_S) && defined(TFM_PLATFORM_WDT_API)
+    tfm_platform_wdt_ping();
+#endif
+}
+
+void post_test(void)
+{
 }
 
 enum test_suite_err_t run_test(const char *suite_type, struct test_suite_t test_suites[])
@@ -163,6 +179,9 @@ enum test_suite_err_t run_testsuite(struct test_suite_t *test_suite)
         /* Sets the default value before the test */
         ret.val = TEST_PASSED;
 
+	/* action before run the test */
+	pre_test();
+
         /* Executes the test */
         p_test->test(&ret);
         if (ret.val == TEST_FAILED) {
@@ -176,6 +195,9 @@ enum test_suite_err_t run_testsuite(struct test_suite_t *test_suite)
             printf_set_color(GREEN);
             TEST_LOG("  TEST: %s - PASSED!\r\n", p_test->name);
         }
+
+	/* action after the test*/
+	post_test();
 
         /* Sets pointer to the next test */
         p_test++;
