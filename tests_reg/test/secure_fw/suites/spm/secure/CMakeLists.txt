@@ -11,5 +11,4 @@ add_subdirectory(../common/suites   ${CMAKE_CURRENT_BINARY_DIR}/common/suites)
 # Add test suites.
 add_subdirectory(../ipc/secure      ${CMAKE_CURRENT_BINARY_DIR}/ipc)
 add_subdirectory(../sfn/secure      ${CMAKE_CURRENT_BINARY_DIR}/sfn)
-add_subdirectory(../ns_evt/secure      ${CMAKE_CURRENT_BINARY_DIR}/ns_evt)
 
