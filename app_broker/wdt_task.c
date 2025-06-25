@@ -63,7 +63,7 @@ void wdt_task(void *argument)
 		if (err != TFM_PLATFORM_ERR_SUCCESS)
 			LOG_MSG("[NS] [ERR] watchdog ping fail:%d\r\n", err);
 
-		osDelay(CONFIG_WDT_PING_MS);
+		osDelay(ticks);
 	}
 
 out_err:
