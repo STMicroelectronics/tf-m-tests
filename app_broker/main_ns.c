@@ -26,9 +26,8 @@
 #endif
 #include "thread.h"
 #include "semaphore.h"
-#include <tfm_platform_system.h>
-#include <uapi/tfm_ioctl_api.h>
 #include <wdt_task.h>
+#include <copro_task.h>
 
 /**
  * \brief Modified table template for user defined SVC functions
@@ -129,7 +128,6 @@ __WEAK int32_t tfm_ns_platform_uninit(void)
     return ARM_DRIVER_OK;
 }
 
-
 __WEAK int32_t tfm_ns_cp_init(void)
 {
 #if (CONFIG_TFM_FLOAT_ABI >= 1)
@@ -142,89 +140,6 @@ __WEAK int32_t tfm_ns_cp_init(void)
     return ARM_DRIVER_OK;
 }
 
-#ifdef STM32_M33TDCID
-__WEAK const char *cpu_status_str[] = {
-	"offline",
-	"suspended",
-	"started",
-	"running",
-	"crashed",
-	"unknow",
-};
-
-void tfm_ns_start_copro(void *argument)
-{
-	struct cpu_info_res cpu_info;
-	int32_t status, err;
-	uint32_t start, ticks;
-
-	UNUSED_VARIABLE(argument);
-
-	err = tfm_platform_cpu_info(0, &cpu_info);
-	if (err != TFM_PLATFORM_ERR_SUCCESS) {
-		LOG_MSG("[NS] [ERR] get cpu 0 info fail: %d\r\n", err);
-		return;
-	}
-
-	if (cpu_info.status < 0 || cpu_info.status >= CPU_LAST) {
-		LOG_MSG("[NS] [ERR] cpu %s error %d\r\n",
-                        cpu_info.name, cpu_info.status);
-		return;
-	}
-
-	if (cpu_info.status != CPU_OFFLINE) {
-		LOG_MSG("[NS] [INF] cpu %s already started\r\n", cpu_info.name);
-		LOG_MSG("[NS] [INF] cpu %s status: %s\r\n",
-			cpu_info.name, cpu_status_str[cpu_info.status]);
-		return;
-	}
-
-	err = tfm_platform_cpu_start(0, &status);
-	if (err != TFM_PLATFORM_ERR_SUCCESS) {
-		LOG_MSG("cpu start fail err: %d\r\n", err);
-		return;
-	}
-
-	/* Polling status */
-	start = osKernelGetTickCount();
-	while (status == CPU_STARTED) {
-		err = tfm_platform_cpu_info(0, &cpu_info);
-		if (err == TFM_PLATFORM_ERR_SUCCESS) {
-			status = cpu_info.status;
-                } else {
-			LOG_MSG("get cpu 0 info fail: %d ", err);
-			status = CPU_LAST;
-			break;
-		}
-		/* Check end of 1s timeout */
-		ticks = osKernelGetTickCount();
-		if (ticks - start > osKernelGetTickFreq()) {
-			LOG_MSG("timeout ");
-			break;
-		}
-	}
-
-	if (status == CPU_RUNNING) {
-		LOG_MSG("[NS] [INF] cpu %s started\r\n", cpu_info.name);
-	} else {
-		LOG_MSG("[NS] [ERR] cpu %s start failed status: %s\r\n", cpu_info.name,
-			cpu_status_str[status]);
-		err = tfm_platform_cpu_stop(0, &status);
-		if (err != TFM_PLATFORM_ERR_SUCCESS) {
-			LOG_MSG("[NS] [ERR] cpu %s stop fail err: %d\r\n", cpu_info.name, err);
-			return;
-		}
-	}
-}
-
-static osThreadFunc_t ca35_thread_func = tfm_ns_start_copro;
-static const osThreadAttr_t ca35_thread_attr = {
-    .name = "CA35_thread",
-    .stack_size = 1024U,
-    .tz_module = ((TZ_ModuleId_t)TFM_DEFAULT_NSID),
-    .priority = osPriorityHigh,
-};
-#endif
 extern void tfm_ns_sec_process(void *arg);
 /**
  * \brief List of RTOS thread attributes
@@ -274,16 +189,15 @@ int main(void)
     (void) osThreadNew(mailbox_thread_func, NULL, &mailbox_thread_attr);
 #endif
 
-#ifdef STM32_M33TDCID
-    (void) osThreadNew(ca35_thread_func, NULL, &ca35_thread_attr);
-#endif
-
     (void) osThreadNew(thread_func, NULL, &thread_attr);
 
     LOG_MSG("Non-Secure system starting...\r\n");
 
     if (IS_ENABLED(TFM_PLATFORM_WDT_API))
 	    wdt_init();
+
+    if (IS_ENABLED(STM32_M33TDCID))
+	    copro_init();
 
     (void) osKernelStart();
 
