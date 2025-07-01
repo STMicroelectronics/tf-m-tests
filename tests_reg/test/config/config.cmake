@@ -66,6 +66,10 @@ if (CONFIG_TFM_FLOAT_ABI STREQUAL "soft")
     set(TEST_NS_FPU             OFF        CACHE BOOL      "Whether to build NS regression FPU tests")
 endif()
 
+if (NOT TFM_PARTITION_PM)
+    set(TEST_NS_PM              OFF        CACHE BOOL      "Whether to build NS regression Power Management tests")
+endif()
+
 ########################## Test profile ########################################
 
 if (TFM_PROFILE)

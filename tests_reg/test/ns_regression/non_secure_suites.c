@@ -63,6 +63,9 @@
 #ifdef TEST_NS_NS_EVT
 #include "ns_evt_ns_tests.h"
 #endif
+#ifdef TEST_NS_PM
+#include "pm_ns_tests.h"
+#endif
 
 static struct test_suite_t test_suites[] = {
     /* List test cases which are compliant with level 1 isolation */
@@ -143,6 +146,11 @@ static struct test_suite_t test_suites[] = {
 #ifdef TEST_NS_NS_EVT
     /* Non-secure IPC test cases */
     {&register_testsuite_ns_ns_evt_interface, 0, 0, 0},
+#endif
+
+#ifdef TEST_NS_PM
+    /* Non-secure Power Management test cases */
+    {&register_testsuite_ns_pm_interface, 0, 0, 0},
 #endif
     /* End of test suites */
     {0, 0, 0, 0}

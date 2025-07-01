@@ -23,3 +23,4 @@ add_subdirectory(../suites/multi_core/non_secure    ${CMAKE_CURRENT_BINARY_DIR}/
 add_subdirectory(../suites/nsid/non_secure          ${CMAKE_CURRENT_BINARY_DIR}/suites/nsid)
 add_subdirectory(../suites/fpu/non_secure           ${CMAKE_CURRENT_BINARY_DIR}/suites/fpu)
 add_subdirectory(../suites/spm/non_secure           ${CMAKE_CURRENT_BINARY_DIR}/suites/spm)
+add_subdirectory(../suites/pm/non_secure            ${CMAKE_CURRENT_BINARY_DIR}/suites/pm)

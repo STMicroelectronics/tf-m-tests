@@ -29,6 +29,7 @@ include(utils)
         TEST_NS_SFN_BACKEND;
         TEST_NS_FPU;
         TEST_NS_NS_EVT;
+        TEST_NS_PM;
     "
     )
 
