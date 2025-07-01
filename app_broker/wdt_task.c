@@ -27,13 +27,13 @@ void wdt_task(void *argument)
 {
 	struct wdt_timeout_cfg wdt_cfg;
 	struct wdt_info wdt_info;
-	uint32_t ticks, tick_freq;
+	uint32_t tk_ping, tk_freq;
 	int err;
 
 	UNUSED_VARIABLE(argument);
 
-	tick_freq = osKernelGetTickFreq();
-	ticks = (tick_freq * CONFIG_WDT_TIMEOUT_MS) / MSEC_PER_SEC;
+	tk_freq = osKernelGetTickFreq();
+	tk_ping = (tk_freq * CONFIG_WDT_PING_MS) / MSEC_PER_SEC;
 
 	wdt_cfg.timeout = CONFIG_WDT_TIMEOUT_MS;
 	err = tfm_platform_wdt_set(&wdt_cfg);
@@ -63,7 +63,7 @@ void wdt_task(void *argument)
 		if (err != TFM_PLATFORM_ERR_SUCCESS)
 			LOG_MSG("[NS] [ERR] watchdog ping fail:%d\r\n", err);
 
-		osDelay(ticks);
+		osDelay(tk_ping);
 	}
 
 out_err:
