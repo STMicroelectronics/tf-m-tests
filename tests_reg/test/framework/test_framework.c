@@ -95,7 +95,10 @@ enum test_suite_err_t run_test(const char *suite_type, struct test_suite_t test_
         if (test_suites[i].val == TEST_PASSED) {
             printf_set_color(GREEN);
             TEST_LOG(" PASSED\r\n");
-        } else {
+        } else if (test_suites[i].val == TEST_SKIPPED) {
+            printf_set_color(YELLOW);
+            TEST_LOG(" SKIPPED\r\n");
+	} else {
             printf_set_color(RED);
             TEST_LOG(" FAILED\r\n");
             retval = TEST_SUITE_ERR_TEST_FAILED;
@@ -154,12 +157,18 @@ enum test_suite_err_t run_testsuite(struct test_suite_t *test_suite)
 
     /* Sets test suite parameters */
     test_suite->freg(test_suite);
-    if (test_suite->name == 0 || test_suite->list_size == 0) {
+
+    if (test_suite->name == 0) {
         print_error("TEST_SUITE_ERR_INVALID_DATA!");
         return TEST_SUITE_ERR_INVALID_DATA;
     }
 
     printf_set_color(YELLOW);
+    if (test_suite->list_size == 0) {
+        TEST_LOG("Skip Test Suite %s (empty)\r\n", test_suite->name);
+	test_suite->val = TEST_SKIPPED;
+	return TEST_SUITE_ERR_NO_ERROR;
+    }
     TEST_LOG("Running Test Suite %s...\r\n", test_suite->name);
 
     /* Sets pointer to the first test */
