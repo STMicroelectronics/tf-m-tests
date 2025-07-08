@@ -70,6 +70,10 @@ if (NOT TFM_PARTITION_PM)
     set(TEST_NS_PM              OFF        CACHE BOOL      "Whether to build NS regression Power Management tests")
 endif()
 
+if (NOT TFM_PLATFORM_CPU_API)
+	set(TEST_NS_CPU         OFF        CACHE BOOL      "Whether to build NS regression CPU Management tests")
+endif()
+
 ########################## Test profile ########################################
 
 if (TFM_PROFILE)

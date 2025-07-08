@@ -27,3 +27,5 @@ set(TEST_NS_SFN_BACKEND     OFF       CACHE BOOL      "Whether to build NS regre
 set(TEST_NS_PM              ON        CACHE BOOL      "Whether to build NS regression Power Management tests")
 set(TEST_NS_PM_SUSPEND      OFF       CACHE BOOL      "Whether to build NS regression power suspend/resume tests")
 set(TEST_NS_PM_OFF          OFF       CACHE BOOL      "Whether to build NS regression power off test")
+
+set(TEST_NS_CPU             OFF       CACHE BOOL      "Whether to build NS regression CPU Management tests")

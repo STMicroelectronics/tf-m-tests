@@ -38,3 +38,6 @@ tfm_invalid_config(NOT PLATFORM_FLIH_IRQ_TEST_SUPPORT AND TEST_NS_FLIH_IRQ)
 
 ############################ Power Management dependence ########################
 tfm_invalid_config(NOT TFM_PARTITION_PM AND (TEST_NS_PM))
+
+############################ CPU dependence #####################################
+tfm_invalid_config(NOT TFM_PARTITION_PLATFORM AND (TEST_NS_CPU))

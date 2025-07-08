@@ -29,6 +29,7 @@ include(utils)
         TEST_NS_FPU;
         TEST_NS_NS_EVT;
         TEST_NS_PM;
+        TEST_NS_CPU;
         TEST_S_ATTESTATION;
         TEST_S_CRYPTO;
         TEST_S_ITS;
