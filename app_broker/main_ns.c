@@ -196,7 +196,7 @@ int main(void)
     if (IS_ENABLED(TFM_PLATFORM_WDT_API))
 	    wdt_init();
 
-    if (IS_ENABLED(STM32_M33TDCID))
+    if (IS_ENABLED(TFM_PLATFORM_CPU_API))
 	    copro_init();
 
     (void) osKernelStart();
