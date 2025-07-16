@@ -144,6 +144,7 @@ extern void tfm_ns_sec_process(void *arg);
 /**
  * \brief List of RTOS thread attributes
  */
+#if PLATFORM_HAS_NS_NOTIF
 static osThreadFunc_t ns_sec_thread_func = tfm_ns_sec_process;
 static const osThreadAttr_t ns_secure_thread_attr = {
     .name = "sec_thread",
@@ -151,7 +152,7 @@ static const osThreadAttr_t ns_secure_thread_attr = {
     .tz_module = ((TZ_ModuleId_t)TFM_DEFAULT_NSID),
     .priority = osPriorityHigh,
 };
-
+#endif
 
 /**
  * \brief main() function
