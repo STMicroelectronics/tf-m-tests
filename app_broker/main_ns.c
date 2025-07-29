@@ -28,6 +28,7 @@
 #include "semaphore.h"
 #include <wdt_task.h>
 #include <copro_task.h>
+#include <util_macro.h>
 
 /**
  * \brief Modified table template for user defined SVC functions
