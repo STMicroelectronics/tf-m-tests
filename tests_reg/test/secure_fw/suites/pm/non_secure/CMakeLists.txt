@@ -34,6 +34,7 @@ target_link_libraries(tfm_test_suite_pm_ns
     PRIVATE
         tfm_test_framework_ns
         RTX_OS
+        tfm_test_broker
 )
 
 target_link_libraries(tfm_ns_tests

@@ -10,6 +10,7 @@
 #include <test_framework.h>
 #include <uapi/tfm_pm_api.h>
 #include <psa/error.h>
+#include <copro_task.h>
 
 int32_t _set_wakeup_source(void)
 {
@@ -23,6 +24,8 @@ static void _suspend_resume(enum pm_suspend_mode_t mode, struct test_result_t *r
 {
 	int32_t err;
 
+	osThreadFlagsSet(tid_copro, COPRO_STOP);
+
 	err = _set_wakeup_source();
 	if (err) {
 		TEST_LOG("set a wakeup source failed:%d\r\n", err);
@@ -34,6 +37,8 @@ static void _suspend_resume(enum pm_suspend_mode_t mode, struct test_result_t *r
 		TEST_LOG("suspend request (%d) failed:%d\r\n", mode, err);
 		goto err;
 	}
+
+	osThreadFlagsSet(tid_copro, COPRO_START);
 
 	ret->val = TEST_PASSED;
 	return;
