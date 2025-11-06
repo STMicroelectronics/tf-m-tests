@@ -183,6 +183,7 @@ target_sources(tfm_test_broker
         main_ns.c
         $<$<BOOL:${TFM_PLATFORM_WDT_API}>:wdt_task.c>
         $<$<BOOL:${TFM_PLATFORM_CPU_API}>:copro_task.c>
+        scmi_task.c
 )
 
 target_include_directories(tfm_test_broker

@@ -1,0 +1,49 @@
+/*
+ * Copyright (C) 2025, STMicroelectronics
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ */
+#include <cmsis_os2.h>
+#include <cmsis_compiler.h>
+#include <copro_task.h>
+#include <stdio.h>
+#include <test_app.h>
+#include <tfm_nsid_manager.h>
+#include <tfm_log.h>
+#include <tfm_platform_system.h>
+#include <tfm_scmi_api.h>
+#include <uapi/tfm_ioctl_api.h>
+
+void tfm_sys_power_state_notifier(uint32_t agent_id, bool graceful, enum scmi_sys_power event)
+{
+	const char *graceful_str = graceful ? "GRACEFUL" : "";
+
+	switch (event) {
+	case  SYS_POWER_SHUTDOWN:
+		printf("agent %d %s SYS_POWER_SHUTDOWN\r\n", agent_id, graceful_str);
+		break;
+
+	case  SYS_POWER_COLD_RESET:
+		printf("agent %d %s SYS_POWER_COLD_RESET\r\n", agent_id, graceful_str);
+		tfm_platform_system_reset();
+		break;
+
+	case  SYS_POWER_WARM_RESET:
+		printf("agent %d %s SYS_POWER_WARM_RESET\r\n", agent_id, graceful_str);
+		printf("stop command\r\n");
+		osThreadFlagsSet(tid_copro, COPRO_STOP);
+		printf("stop command done\r\n");
+		osThreadFlagsSet(tid_copro, COPRO_START);
+		printf("start command done\r\n");
+		break;
+
+	case  SYS_POWER_SUSPEND:
+		printf("agent %d %s SYS_POWER_SUSPEND\r\n", agent_id, graceful_str);
+		break;
+
+	default:
+		printf("Unsupported sys power notification %x\r\n", event);
+		break;
+	}
+}
