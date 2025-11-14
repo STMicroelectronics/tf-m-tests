@@ -14,13 +14,10 @@
 #define __TFM_NSID_MANAGER_H__
 
 #include <stdint.h>
+#include <lib/utils_def.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef ARRAY_SIZE
-#define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(arr[0]))
 #endif
 
 #define TFM_DEFAULT_GID         0x00
