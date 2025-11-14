@@ -6,10 +6,13 @@
 #include <cmsis_os2.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
 
 #include <test_framework.h>
 #include <uapi/tfm_ioctl_api.h>
 #include <psa/error.h>
+
+#include <region_defs.h>
 
 #define MSEC_PER_SEC		1000L
 
@@ -31,6 +34,76 @@ const char *cpu_method_str[] = {
 	"remoteproc",
 	"invalid",
 };
+
+/* resource table structures and definition aligned with OpenAMP and Linux*/
+enum fw_resource_type {
+	RSC_CARVEOUT = 0,
+	RSC_DEVMEM = 1,
+	RSC_TRACE = 2,
+	RSC_VDEV = 3,
+	RSC_LAST = 4,
+	RSC_VENDOR_START = 128,
+	RSC_VENDOR_END = 512,
+};
+
+struct resource_table {
+	/** Version number */
+	uint32_t ver;
+
+	/** Number of resource entries */
+	uint32_t num;
+
+	/** Reserved (must be zero) */
+	uint32_t reserved[2];
+
+	/** Array of offsets pointing at the various resource entries */
+	uint32_t offset[0];
+};
+
+struct fw_rsc_trace {
+	/** Trace buffer entry has type 2 */
+	uint32_t type;
+
+	/** Device address of the buffer */
+	uint32_t da;
+
+	/** Length of the buffer in bytes */
+	uint32_t len;
+
+	/** Reserved (must be zero) */
+	uint32_t reserved;
+
+	/** Optional human-readable name of the requested memory region used for debugging */
+	uint8_t name[32];
+};
+
+struct fw_resource_table {
+	struct resource_table hdr;
+	uint32_t offset[1];
+
+	/* rpmsg trace entry */
+	struct fw_rsc_trace cm_trace;
+};
+
+const char trace_buffer[] = "Hello from TF-M test\n";
+
+static struct fw_resource_table cpu_rsc_tab = {
+	.hdr = {
+		.ver = 1,
+		.num = 1,
+	},
+	.offset = {
+		offsetof(struct fw_resource_table, cm_trace),
+	},
+	.cm_trace = {
+		RSC_TRACE,
+		(uint32_t)trace_buffer,
+		sizeof(trace_buffer),
+		0,
+		"tf-m-test-trace"
+	},
+};
+
 
 void cpu_list(struct test_result_t *ret)
 {
@@ -170,6 +243,55 @@ static bool _cpu_has_enable_method(struct cpu_info_res *cpu_info)
 	return true;
 }
 
+void cpu_set_rsc_tab(struct test_result_t *result)
+{
+	static struct cpu_serv_info serv_info;
+	struct cpu_info_res cpu_info;
+	int32_t i, err;
+
+	result->val = TEST_PASSED;
+
+	/* Copy the resource table and trace buffer in shared memory*/
+	memcpy ((void *)NS_IPC_SHMEM_START, trace_buffer, sizeof(trace_buffer));
+	cpu_rsc_tab.cm_trace.da = NS_IPC_SHMEM_START;
+	cpu_rsc_tab.cm_trace.len = sizeof(trace_buffer);
+
+	memcpy ((void *)NS_IPC_SHMEM_START + sizeof(trace_buffer), &cpu_rsc_tab,
+		sizeof(cpu_rsc_tab));
+
+	err = tfm_platform_cpu_service_info(&serv_info);
+	if (err != TFM_PLATFORM_ERR_SUCCESS || serv_info.nb_cpu < 0) {
+		result->val = TEST_FAILED;
+		return;
+	}
+
+	for (i = 0; i < serv_info.nb_cpu; i++) {
+		err = tfm_platform_cpu_info(i, &cpu_info);
+		if (err != TFM_PLATFORM_ERR_SUCCESS) {
+			TEST_LOG("  > test cpu %d, info failed\r\n", i);
+			result->val = TEST_FAILED;
+			continue;
+		}
+
+		if (!_cpu_has_enable_method(&cpu_info)) {
+			TEST_LOG("  > test cpu %s, has no enable method (skipped)\r\n",
+				 cpu_info.name);
+			continue;
+		}
+
+		TEST_LOG("  > test cpu %s\r\n", cpu_info.name);
+
+		err = tfm_platform_cpu_set_rsc_tab(i, (uint32_t)NS_IPC_SHMEM_START +
+						      sizeof(trace_buffer),
+						   sizeof(cpu_rsc_tab));
+		if (err) {
+			TEST_LOG("  > test cpu failed %d\r\n", err);
+			result->val = TEST_FAILED;
+			continue;
+		}
+	}
+}
+
 void cpu_start_stop(struct test_result_t *result)
 {
 	static struct cpu_serv_info serv_info;
@@ -209,7 +331,8 @@ void cpu_start_stop(struct test_result_t *result)
 
 static struct test_t cpu_tests[] = {
 	{&cpu_list, "TFM_NS_STM32_CPU_TEST_0201", "show platform cpus information"},
-	{&cpu_start_stop, "TFM_NS_STM32_CPU_TEST_0202", "multiple start stop on remoteproc cpu"},
+	{&cpu_set_rsc_tab, "TFM_NS_STM32_CPU_TEST_0202", "set the resource tablein backup reg"},
+	{&cpu_start_stop, "TFM_NS_STM32_CPU_TEST_0203", "multiple start stop on remoteproc cpu"},
 };
 
 void register_testsuite_ns_cpu_interface(struct test_suite_t *p_test_suite)
