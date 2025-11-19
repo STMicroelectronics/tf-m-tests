@@ -14,6 +14,7 @@
 #include <tfm_platform_system.h>
 #include <tfm_scmi_api.h>
 #include <uapi/tfm_ioctl_api.h>
+#include <util_macro.h>
 
 void tfm_sys_power_state_notifier(uint32_t agent_id, bool graceful, enum scmi_sys_power event)
 {
@@ -31,11 +32,13 @@ void tfm_sys_power_state_notifier(uint32_t agent_id, bool graceful, enum scmi_sy
 
 	case  SYS_POWER_WARM_RESET:
 		printf("agent %d %s SYS_POWER_WARM_RESET\r\n", agent_id, graceful_str);
-		printf("stop command\r\n");
-		osThreadFlagsSet(tid_copro, COPRO_STOP);
-		printf("stop command done\r\n");
-		osThreadFlagsSet(tid_copro, COPRO_START);
-		printf("start command done\r\n");
+		if (IS_ENABLED(TFM_PLATFORM_CPU_API)) {
+			printf("stop command\r\n");
+			osThreadFlagsSet(tid_copro, COPRO_STOP);
+			printf("stop command done\r\n");
+			osThreadFlagsSet(tid_copro, COPRO_START);
+			printf("start command done\r\n");
+		}
 		break;
 
 	case  SYS_POWER_SUSPEND:
