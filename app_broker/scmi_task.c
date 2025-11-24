@@ -43,6 +43,10 @@ void tfm_sys_power_state_notifier(uint32_t agent_id, bool graceful, enum scmi_sy
 
 	case  SYS_POWER_SUSPEND:
 		printf("agent %d %s SYS_POWER_SUSPEND\r\n", agent_id, graceful_str);
+		if (IS_ENABLED(TFM_PLATFORM_CPU_API)) {
+			printf("suspend command\r\n");
+			osThreadFlagsSet(tid_copro, COPRO_SUSPEND);
+		}
 		break;
 
 	default:
