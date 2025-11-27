@@ -11,6 +11,7 @@
 #include <uapi/tfm_pm_api.h>
 #include <psa/error.h>
 #include <copro_task.h>
+#include <util_macro.h>
 
 int32_t _set_wakeup_source(void)
 {
@@ -24,7 +25,8 @@ static void _suspend_resume(enum pm_suspend_mode_t mode, struct test_result_t *r
 {
 	int32_t err;
 
-	osThreadFlagsSet(tid_copro, COPRO_STOP);
+	if (IS_ENABLED(TFM_PLATFORM_CPU_API))
+		osThreadFlagsSet(tid_copro, COPRO_STOP);
 
 	err = _set_wakeup_source();
 	if (err) {
@@ -38,7 +40,8 @@ static void _suspend_resume(enum pm_suspend_mode_t mode, struct test_result_t *r
 		goto err;
 	}
 
-	osThreadFlagsSet(tid_copro, COPRO_START);
+	if (IS_ENABLED(TFM_PLATFORM_CPU_API))
+		osThreadFlagsSet(tid_copro, COPRO_START);
 
 	ret->val = TEST_PASSED;
 	return;
