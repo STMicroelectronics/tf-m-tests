@@ -184,6 +184,8 @@ static void tfm_ps_test_3001(struct test_result_t *ret)
      * Prepare should not fail as the NV counters has the same values and
      * the PS area authentication is aligned with those values.
      */
+    pre_test();
+
     status = tfm_ps_test_system_prepare();
     if (status != PSA_SUCCESS) {
         TEST_FAIL("AM prepare should not fail");

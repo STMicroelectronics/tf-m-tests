@@ -1053,6 +1053,8 @@ static void tfm_ps_test_1022(struct test_result_t *ret)
         psa_storage_uid_t uid = test_uid[cycle];
         struct psa_storage_info_t info = {0};
 
+        pre_test();
+
         memset(read_asset_data, 0x00, sizeof(read_asset_data));
 
         /* Set with data and no flags and a valid UID */
