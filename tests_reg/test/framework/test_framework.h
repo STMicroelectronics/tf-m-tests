@@ -134,6 +134,16 @@ void show_tests(const struct test_suite_t *ts);
 void set_test_failed(const char *info_msg, const char *filename, uint32_t line,
                      struct test_result_t *ret);
 
+/**
+ * \brief perform pre-test actions, like watchdog refresh.
+ */
+void pre_test(void);
+
+/**
+ * \brief perform pos-test actions.
+ */
+void post_test(void);
+
 #define TEST_FAIL(info_msg)  set_test_failed(info_msg, __FILE__, __LINE__, ret)
 
 #ifdef __cplusplus
