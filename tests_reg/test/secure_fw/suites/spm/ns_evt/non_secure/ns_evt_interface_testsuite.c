@@ -27,7 +27,7 @@ static struct test_t ns_evt_tests[] = {
     {&tfm_ns_evt_test_1001, "TFM_NS_EVT_TEST_1001",
      "Send an event to non secure from an unpriv partition"},
     {&tfm_ns_evt_test_1002, "TFM_NS_EVT_TEST_1002",
-     "Send an event ot non secure from an FILH unpriv handler"},
+     "Send an event to non secure from an FILH unpriv handler"},
     {&tfm_ns_evt_test_1003, "TFM_NS_EVT_TEST_1003",
      "Fail to send an event not handled by an unpriv partition"},
     {&tfm_ns_evt_test_1004, "TFM_NS_EVT_TEST_1004",
