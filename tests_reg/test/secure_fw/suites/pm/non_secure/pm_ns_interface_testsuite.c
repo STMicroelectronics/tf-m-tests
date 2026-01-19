@@ -21,12 +21,22 @@ int32_t _set_wakeup_source(void)
 	return 0;
 }
 
-static void _suspend_resume(enum pm_suspend_mode_t mode, struct test_result_t *ret)
+static void delay(unsigned int second)
+{
+	uint32_t tk_freq = osKernelGetTickFreq();
+	osDelay(second * tk_freq);
+}
+
+static void _suspend_resume(uint32_t flag, struct test_result_t *ret)
 {
 	int32_t err;
 
-	if (IS_ENABLED(TFM_PLATFORM_CPU_API))
-		osThreadFlagsSet(tid_copro, COPRO_STOP);
+	if (!IS_ENABLED(TFM_PLATFORM_CPU_API)) {
+		TEST_LOG("CPU_API require for low power tests\r\n");
+		goto err;
+	}
+
+	osThreadFlagsSet(tid_copro, COPRO_STOP);
 
 	err = _set_wakeup_source();
 	if (err) {
@@ -34,14 +44,14 @@ static void _suspend_resume(enum pm_suspend_mode_t mode, struct test_result_t *r
 		goto err;
 	}
 
-	err = psa_pm_suspend(mode);
-	if (err != PSA_SUCCESS) {
-		TEST_LOG("suspend request (%d) failed:%d\r\n", mode, err);
-		goto err;
-	}
+	osThreadFlagsSet(tid_copro, flag);
 
-	if (IS_ENABLED(TFM_PLATFORM_CPU_API))
-		osThreadFlagsSet(tid_copro, COPRO_START);
+	osThreadFlagsSet(tid_copro, COPRO_SUSPEND);
+
+	/* Waiting Low Power mode execution */
+	delay(1);
+
+	osThreadFlagsSet(tid_copro, COPRO_START);
 
 	ret->val = TEST_PASSED;
 	return;
@@ -51,22 +61,22 @@ err:
 
 void pm_suspend_stop2(struct test_result_t *ret)
 {
-	_suspend_resume(PM_STOP2, ret);
+	_suspend_resume(COPRO_PM_STOP2, ret);
 }
 
 void pm_suspend_lp_stop2(struct test_result_t *ret)
 {
-	_suspend_resume(PM_LP_STOP2, ret);
+	_suspend_resume(COPRO_PM_LP_STOP2, ret);
 }
 
 void pm_suspend_lp_lv_stop2(struct test_result_t *ret)
 {
-	_suspend_resume(PM_LPLV_STOP2, ret);
+	_suspend_resume(COPRO_PM_LPLV_STOP2, ret);
 }
 
 void pm_suspend_standby(struct test_result_t *ret)
 {
-	_suspend_resume(PM_STANDBY1, ret);
+	_suspend_resume(COPRO_PM_STANDBY1, ret);
 }
 
 void pm_power_off(struct test_result_t *ret)
