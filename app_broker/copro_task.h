@@ -10,6 +10,7 @@
 
 #define COPRO_START	(0x1U)
 #define COPRO_STOP	(0x2U)
+#define COPRO_SUSPEND	(0x3U)
 
 extern osThreadId_t tid_copro;
 

@@ -183,12 +183,14 @@ target_sources(tfm_test_broker
         main_ns.c
         $<$<BOOL:${TFM_PLATFORM_WDT_API}>:wdt_task.c>
         $<$<BOOL:${TFM_PLATFORM_CPU_API}>:copro_task.c>
+        $<$<BOOL:${TFM_PLATFORM_CPU_API}>:${stm32mp2xx_hal_driver_SOURCE_DIR}/Src/stm32mp2xx_hal_pwr.c>
         scmi_task.c
 )
 
 target_include_directories(tfm_test_broker
     PUBLIC
         .
+        ${stm32mp2xx_hal_driver_SOURCE_DIR}/Inc
 )
 
 target_link_libraries(tfm_test_broker
