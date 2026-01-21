@@ -22,6 +22,8 @@
 
 #define COPRO_ID_A35		0
 
+typedef enum tfm_platform_err_t (*cpu_cmd_fn_t)(uint32_t, int32_t *);
+
 __WEAK const char *cpu_status_str[] = {
 	"offline",
 	"suspended",
@@ -58,58 +60,65 @@ static int32_t copro_wait_status(uint32_t cpu_id, struct cpu_info_res *cpu_info,
 	return (cpu_info->status == status) ? 0 : -ETIMEDOUT;
 }
 
-typedef enum tfm_platform_err_t (*cpu_cmd_fn_t)(uint32_t, int32_t *);
 
-static void _copro_cmd_wait(cpu_cmd_fn_t cpu_fn, uint32_t cpu_id, int32_t wait_status)
+static int32_t _copro_cmd_wait(cpu_cmd_fn_t cpu_fn, uint32_t cpu_id, int32_t wait_status)
 {
-        struct cpu_info_res cpu_info;
+	struct cpu_info_res cpu_info;
 	int32_t status, err;
 
 	if (!cpu_fn)
-		return;
+		return -TFM_PLATFORM_ERR_INVALID_PARAM;
 
 	err = tfm_platform_cpu_info(cpu_id, &cpu_info);
 	if (err != TFM_PLATFORM_ERR_SUCCESS) {
 		LOG_MSG("[NS] [COPRO] [ERR] get cpu 0 info fail: %d\r\n", err);
-		return;
+		return err;
 	}
 
 	if (cpu_info.status < 0 || cpu_info.status >= CPU_LAST) {
 		LOG_MSG("[NS] [COPRO] [ERR] cpu %s error %d\r\n",
-                        cpu_info.name, cpu_info.status);
-		return;
+			cpu_info.name, cpu_info.status);
+		return TFM_PLATFORM_ERR_SYSTEM_ERROR;
 	}
 
 	if (cpu_info.status == wait_status) {
 		LOG_MSG("[NS] [COPRO] [INF] cpu %s is already %s\r\n",
 			cpu_info.name, cpu_status_str[cpu_info.status]);
-		return;
+		return TFM_PLATFORM_ERR_SYSTEM_ERROR;
 	}
 
 	err = cpu_fn(cpu_id, &status);
 	if (err != TFM_PLATFORM_ERR_SUCCESS) {
 		LOG_MSG("[NS] [COPRO] [ERR] cpu %s cmd fail: %d\r\n", cpu_info.name, err);
-		return;
+		return err;
 	}
 
 	err = copro_wait_status(cpu_id, &cpu_info, COPRO_TIMEOUT_MS, wait_status);
-	if (err == -ETIMEDOUT) {
-		LOG_MSG("[NS] [COPRO] [ERR] cpu %s timeout\r\n", cpu_info.name);
-		return;
+	if (err) {
+		LOG_MSG("[NS] [COPRO] [ERR] cpu %s error %d\r\n", cpu_info.name, err);
+		return err;
 	}
 
 	LOG_MSG("[NS] [COPRO] [INF] cpu %s now %s\r\n",
 		cpu_info.name, cpu_status_str[cpu_info.status]);
+
+	return 0;
 }
 
 static void _copro_start(void)
 {
-	_copro_cmd_wait(tfm_platform_cpu_start, COPRO_ID_A35, CPU_RUNNING);
+	int32_t err = _copro_cmd_wait(tfm_platform_cpu_start, COPRO_ID_A35, CPU_RUNNING);
+
+	if (err)
+		LOG_MSG("[NS] [COPRO] [ERR] CPU START failure (%d)\r\n", err);
 }
 
 static void _copro_stop(void)
 {
-	_copro_cmd_wait(tfm_platform_cpu_stop, COPRO_ID_A35, CPU_OFFLINE);
+	int32_t err = _copro_cmd_wait(tfm_platform_cpu_stop, COPRO_ID_A35, CPU_OFFLINE);
+
+	if (err)
+		LOG_MSG("[NS] [COPRO] [ERR] CPU STOP failure (%d)\r\n", err);
 }
 
 void copro_ctrl_task(void *argument)
