@@ -12,3 +12,7 @@ endif()
 if("${TFM_FWU_BOOTLOADER_LIB}" STREQUAL "mcuboot")
     add_subdirectory(../mcuboot/non_secure    ${CMAKE_CURRENT_BINARY_DIR}/mcuboot)
 endif()
+
+if(STM32_FWU_STORAGE_ACCESS)
+     add_subdirectory(../mcuboot/non_secure    ${CMAKE_CURRENT_BINARY_DIR}/mcuboot)
+endif()

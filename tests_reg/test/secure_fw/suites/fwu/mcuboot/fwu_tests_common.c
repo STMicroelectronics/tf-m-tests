@@ -34,7 +34,7 @@
 /* Size of the nonsecure image itself. Does not include header. It takes four
  * bytes in the image header.
  */
-#define NONSECURE_IMAGE_SIZE         IMAGE_NS_CODE_SIZE
+#define NONSECURE_IMAGE_SIZE         (0x00020000) /* arbitrary value, must be lower than partition size */
 #define NONSECURE_IMAGE_SIZE_BYTE_0  \
             (uint8_t)(NONSECURE_IMAGE_SIZE & 0x000000FF)
 #define NONSECURE_IMAGE_SIZE_BYTE_1  \
