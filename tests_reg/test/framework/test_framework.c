@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(TEST_S) && defined(TFM_PLATFORM_WDT_API)
+#if defined(TFM_PLATFORM_WDT_API)
 #include <tfm_platform_system.h>
 #include <uapi/tfm_ioctl_api.h>
 #endif
@@ -59,7 +59,7 @@ const char *test_err_to_str(enum test_suite_err_t err)
 
 void pre_test(void)
 {
-#if defined(TEST_S) && defined(TFM_PLATFORM_WDT_API)
+#if defined(TFM_PLATFORM_WDT_API)
     tfm_platform_wdt_ping();
 #endif
 }
