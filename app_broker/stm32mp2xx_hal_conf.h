@@ -38,7 +38,7 @@
 #endif /* CORE_CA35 */
 /*#define HAL_ADC_MODULE_ENABLED        */
 /* #define HAL_BSEC_MODULE_ENABLED      */
-/*#define HAL_CORTEX_MODULE_ENABLED     */
+#define HAL_CORTEX_MODULE_ENABLED
 /* #define HAL_CRC_MODULE_ENABLED       */
 /* #define HAL_CRYP_MODULE_ENABLED      */
 /* #define HAL_CSI_MODULE_ENABLED       */
@@ -49,7 +49,7 @@
 /* #define HAL_DMA_MODULE_ENABLED       */
 /* #define HAL_DSI_MODULE_ENABLED       */
 /* #define HAL_ETH_MODULE_ENABLED       */
-/* #define HAL_EXTI_MODULE_ENABLED      */
+#define HAL_EXTI_MODULE_ENABLED
 /* #define HAL_FDCAN_MODULE_ENABLED     */
 /* #define HAL_GPIO_MODULE_ENABLED      */
 /* #define HAL_HSEM_MODULE_ENABLED      */
@@ -78,7 +78,7 @@
 /* #define HAL_RCC_MODULE_ENABLED       */
 /* #define HAL_RIF_MODULE_ENABLED       */
 /* #define HAL_RNG_MODULE_ENABLED       */
-/* #define HAL_RTC_MODULE_ENABLED       */
+#define HAL_RTC_MODULE_ENABLED
 /* #define HAL_SAES_MODULE_ENABLED      */
 /* #define HAL_SAI_MODULE_ENABLED       */
 /* #define HAL_SD_MODULE_ENABLED        */

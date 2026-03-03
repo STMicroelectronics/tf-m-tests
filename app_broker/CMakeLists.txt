@@ -184,6 +184,10 @@ target_sources(tfm_test_broker
         $<$<BOOL:${TFM_PLATFORM_WDT_API}>:wdt_task.c>
         $<$<BOOL:${TFM_PLATFORM_CPU_API}>:copro_task.c>
         $<$<BOOL:${TFM_PLATFORM_CPU_API}>:${stm32mp2xx_hal_driver_SOURCE_DIR}/Src/stm32mp2xx_hal_pwr.c>
+        ${stm32mp2xx_hal_driver_SOURCE_DIR}/Src/stm32mp2xx_hal_cortex.c
+        ${stm32mp2xx_hal_driver_SOURCE_DIR}/Src/stm32mp2xx_hal_exti.c
+        ${stm32mp2xx_hal_driver_SOURCE_DIR}/Src/stm32mp2xx_hal_rtc.c
+        ${stm32mp2xx_hal_driver_SOURCE_DIR}/Src/stm32mp2xx_hal_rtc_ex.c
         scmi_task.c
 )
 

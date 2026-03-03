@@ -13,11 +13,90 @@
 #include <copro_task.h>
 #include <util_macro.h>
 
+#include <stm32mp2xx_hal_cortex.h>
+#include <stm32mp2xx_hal_rtc.h>
+#include <stm32mp2xx_hal_rtc_ex.h>
+#include <stm32mp2xx_hal_exti.h>
+
+#define DEFAULT_IRQ_PRIO	1U
+
+RTC_HandleTypeDef RtcHandle;
+
+/* RTC interrupt handler */
+void RTC_IRQHandler(void)
+{
+	HAL_RTC_AlarmIRQHandler(&RtcHandle);
+}
+
+static void RTC_SetAlarm(uint8_t delay)
+{
+	RTC_TimeTypeDef sCurrentTime = {0};
+	RTC_DateTypeDef sCurrentDate = {0};
+	RTC_AlarmTypeDef sAlarm = {0};
+	uint8_t new_min, new_sec;
+
+	/* Read current time */
+	HAL_RTC_GetTime(&RtcHandle, &sCurrentTime, RTC_FORMAT_BCD);
+	HAL_RTC_GetDate(&RtcHandle, &sCurrentDate, RTC_FORMAT_BCD);
+
+	/* Configure alarm time */
+	new_sec = RTC_Bcd2ToByte(sCurrentTime.Seconds) + delay;
+	new_min = RTC_Bcd2ToByte(sCurrentTime.Minutes);
+	if (new_sec >= 60) {
+		new_sec -= 60;
+		new_min += 1;
+	}
+	if (new_min >= 60) {
+		new_min -= 60;
+		/* don't increase hours, since they are masked */
+	}
+	sAlarm.AlarmTime.Seconds = RTC_ByteToBcd2(new_sec) & 0x7F;
+	sAlarm.AlarmTime.Minutes = RTC_ByteToBcd2(new_min) & 0x7F;
+	/* Mask date, weekday and hours so we check only minutes and seconds. */
+	sAlarm.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS;
+	sAlarm.Alarm = RTC_ALARM_B;
+
+	/* Enable alarm interrupt */
+	HAL_RTC_SetAlarm_IT(&RtcHandle, &sAlarm, RTC_FORMAT_BCD);
+}
+
+void configure_it_rtc_wakeup(void)
+{
+	EXTI_HandleTypeDef hexti;
+	EXTI_ConfigTypeDef EXTI_ConfigStructure;
+
+	/* Set Interrupt configuration of EXTI */
+	EXTI_ConfigStructure.Line = EXTI2_LINE_19;
+	EXTI_ConfigStructure.Trigger = EXTI_TRIGGER_RISING;
+	EXTI_ConfigStructure.Mode = EXTI_MODE_INTERRUPT;
+	HAL_EXTI_SetConfigLine(&hexti, &EXTI_ConfigStructure);
+
+	/* Configure the interrupt for RTC */
+	HAL_NVIC_SetPriority(RTC_IRQn, DEFAULT_IRQ_PRIO, 0);
+	HAL_NVIC_EnableIRQ(RTC_IRQn);
+
+	/* Configure RTC Alarm */
+	RTC_SetAlarm(10);
+}
+
+void unconfigure_it_rtc_wakeup(void)
+{
+	HAL_RTC_DeactivateAlarm(&RtcHandle, RTC_ALARM_B);
+	HAL_NVIC_DisableIRQ(RTC_IRQn);
+}
+
+
 int32_t _set_wakeup_source(void)
 {
-	/* TODO
-	 * set a wake up source to test power resume device
-	 */
+	configure_it_rtc_wakeup();
+
+	return 0;
+}
+
+int32_t _clr_wakeup_source(void)
+{
+	unconfigure_it_rtc_wakeup();
+
 	return 0;
 }
 
@@ -50,6 +129,11 @@ static void _suspend_resume(uint32_t flag, struct test_result_t *ret)
 
 	/* Waiting Low Power mode execution */
 	delay(1);
+
+	err = _clr_wakeup_source();
+	if (err) {
+		TEST_LOG("clr a wakeup source failed:%d\r\n", err);
+	}
 
 	osThreadFlagsSet(tid_copro, COPRO_START);
 
@@ -100,10 +184,10 @@ static struct test_t pm_tests[] = {
 
 void register_testsuite_ns_pm_interface(struct test_suite_t *p_test_suite)
 {
-    uint32_t list_size;
+	uint32_t list_size;
 
-    list_size = (sizeof(pm_tests) / sizeof(pm_tests[0]));
+	list_size = (sizeof(pm_tests) / sizeof(pm_tests[0]));
 
-    set_testsuite("PM power management NS interface tests (TFM_NS_PM_XXXX)",
-                  pm_tests, list_size, p_test_suite);
+	set_testsuite("PM power management NS interface tests (TFM_NS_PM_XXXX)",
+		      pm_tests, list_size, p_test_suite);
 }
