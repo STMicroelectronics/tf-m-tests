@@ -106,8 +106,10 @@ static void delay(unsigned int second)
 	osDelay(second * tk_freq);
 }
 
-static void _suspend_resume(uint32_t flag, struct test_result_t *ret)
+static void _suspend_resume(uint32_t flag, uint32_t expected_cpu2cr,
+			    struct test_result_t *ret)
 {
+	uint32_t pwr_cpu2cr = 0;
 	int32_t err;
 
 	if (!IS_ENABLED(TFM_PLATFORM_CPU_API)) {
@@ -135,9 +137,30 @@ static void _suspend_resume(uint32_t flag, struct test_result_t *ret)
 		TEST_LOG("clr a wakeup source failed:%d\r\n", err);
 	}
 
+	pwr_cpu2cr = PWR->CPU2CR;
+	TEST_LOG("CPU1CR = 0x%x\r\n", PWR->CPU1CR);
+	TEST_LOG("CPU2CR = 0x%x\r\n", pwr_cpu2cr);
+
 	osThreadFlagsSet(tid_copro, COPRO_START);
 
-	ret->val = TEST_PASSED;
+	/* Check PWR_CPU2CR flags
+	 *	#17.LVDS_D2
+	 *	#16.LPDS_D2
+	 *	#15.DEEPSLEEP
+	 *	#9.CSSF
+	 *	#8.SBF_D3
+	 *	#7.SBF_D2
+	 *	#6.SBF
+	 *	#5.STOPF
+	 *	#4.VBF
+	 *	#0.PDDS_D2
+	 */
+
+	if (pwr_cpu2cr == expected_cpu2cr)
+		ret->val = TEST_PASSED;
+	else
+		ret->val = TEST_FAILED;
+
 	return;
 err:
 	ret->val = TEST_FAILED;
@@ -145,22 +168,22 @@ err:
 
 void pm_suspend_stop2(struct test_result_t *ret)
 {
-	_suspend_resume(COPRO_PM_STOP2, ret);
+	_suspend_resume(COPRO_PM_STOP2, 0x00000020, ret);
 }
 
 void pm_suspend_lp_stop2(struct test_result_t *ret)
 {
-	_suspend_resume(COPRO_PM_LP_STOP2, ret);
+	_suspend_resume(COPRO_PM_LP_STOP2, 0x00010020, ret);
 }
 
 void pm_suspend_lp_lv_stop2(struct test_result_t *ret)
 {
-	_suspend_resume(COPRO_PM_LPLV_STOP2, ret);
+	_suspend_resume(COPRO_PM_LPLV_STOP2, 0x00030020, ret);
 }
 
 void pm_suspend_standby(struct test_result_t *ret)
 {
-	_suspend_resume(COPRO_PM_STANDBY1, ret);
+	_suspend_resume(COPRO_PM_STANDBY1, 0x00000081, ret);
 }
 
 void pm_power_off(struct test_result_t *ret)
