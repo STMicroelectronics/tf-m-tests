@@ -13,8 +13,31 @@
 #include <tfm_log.h>
 #include <tfm_platform_system.h>
 #include <tfm_scmi_api.h>
+#include <tfm_ns_notif_api.h>
 #include <uapi/tfm_ioctl_api.h>
 #include <util_macro.h>
+#include <scmi_task.h>
+
+void scmi_ca35_disable(void)
+{
+	/* Stop ns notification */
+	tfm_ns_notif_set_mask(~0);
+}
+
+void scmi_ca35_clean_enable(void)
+{
+	uint32_t event_trashed;
+
+	/* Clean smt shared memory */
+	tfm_secure_scmi_reset();
+
+	/* Re-enable notif */
+	tfm_ns_notif_set_mask(0);
+
+	/* remove notif received in race condition */
+	tfm_ns_notif_get(&event_trashed);
+	tfm_ns_notif_get_pending(~0);
+}
 
 void tfm_sys_power_state_notifier(uint32_t agent_id, bool graceful, enum scmi_sys_power event)
 {
