@@ -26,6 +26,16 @@
 
 #define COPRO_ID_A35		0
 
+/*
+ * The low power mode can be limited by CA35-NS directly only for TEST
+ * with backup register 107, the BKR107 expected value is 0xFFFFFFXX
+ * - XX = the max allowed mode with enum pm_suspend_mode_t
+ * - XX = 0xFF when pm mode is not allowed
+ * No impact for cold boot value = 0x00000000 or other strange value
+ */
+#define BKPR_PM_DISABLED	0xFFFFFFFF
+#define BKPR_PM_MASK		0x000000FF
+
 /* EXTI1 CPU2 wake-up with interrupt mask register */
 #define EXTI1_C2IMR1_GPIO		GENMASK_32(15, 0)
 #define EXTI1_C2IMR1_PVD		BIT_32(16)
@@ -247,6 +257,18 @@ static void _copro_suspend(void)
 	if (_copro_wait_D1_state(COPRO_TIMEOUT_MS, PWR_D1_DSTANDBY)) {
 		LOG_MSG("[NS] [COPRO] [ERR] D1 DStandby timeout\r\n");
 		return;
+	}
+
+	/* Only for TEST: the low power mode is limited by CA35-NS with BKP107R value 0xFFFFFFXX */
+	if ((TAMP->BKP107R & ~BKPR_PM_MASK) == ~BKPR_PM_MASK) {
+		if (TAMP->BKP107R == BKPR_PM_DISABLED) {
+			pm_is_allowed = false;
+			LOG_MSG("[NS] [COPRO] [INF] CPU SUSPEND disabled by CA35\r\n");
+		} else {
+			pm_is_allowed = true;
+			pm_allowed = (enum pm_suspend_mode_t)(TAMP->BKP107R & BKPR_PM_MASK);
+			LOG_MSG("[NS] [COPRO] [INF] CA35 force mode=%x\r\n", pm_allowed);
+		}
 	}
 
 	if (!pm_is_allowed) {
