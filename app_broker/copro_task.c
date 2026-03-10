@@ -26,6 +26,13 @@
 
 #define COPRO_ID_A35		0
 
+/* EXTI1 CPU2 wake-up with interrupt mask register */
+#define EXTI1_C2IMR1_GPIO		GENMASK_32(15, 0)
+#define EXTI1_C2IMR1_PVD		BIT_32(16)
+#define EXTI1_C2IMR1_PVM		BIT_32(17)
+#define EXTI1_C2IMR2_WKUP_MASK		GENMASK_32(57 % 32, 52 % 32)
+#define EXTI1_C2IMR3_C1SEV		BIT_32(65 % 32)
+
 typedef enum tfm_platform_err_t (*cpu_cmd_fn_t)(uint32_t, int32_t *);
 
 __WEAK const char *cpu_status_str[] = {
@@ -48,6 +55,9 @@ typedef struct ns_context {
 } ns_context_t;
 
 static ns_context_t saved_context;
+
+static bool pm_is_allowed = true;
+static enum pm_suspend_mode_t pm_allowed = PM_STANDBY1;
 
 static void save_it_status(void)
 {
@@ -189,9 +199,45 @@ static void _copro_stop(void)
 		LOG_MSG("[NS] [COPRO] [ERR] CPU STOP failure (%d)\r\n", err);
 }
 
+static enum pm_suspend_mode_t _copro_get_pm_suspend_mode(void)
+{
+	uint32_t cpu1cr = PWR->CPU1CR;
+	uint32_t c2imr1 = EXTI1->C2IMR1;
+	uint32_t c2imr2 = EXTI1->C2IMR2;
+	uint32_t c2imr3 = EXTI1->C2IMR3;
+	enum pm_suspend_mode_t max_mode = PM_STANDBY1;
+
+	/* Verify the max level supported according to the activated EXTI1 */
+	if ((c2imr1 & (EXTI1_C2IMR1_GPIO | EXTI1_C2IMR1_PVD | EXTI1_C2IMR1_PVM)) != 0U) {
+		max_mode = PM_LPLV_STOP2;
+	}
+
+	/* Wake-up pin are connected directly to PWR */
+	if (((c2imr1 & ~(EXTI1_C2IMR1_GPIO | EXTI1_C2IMR1_PVD | EXTI1_C2IMR1_PVM)) != 0U) ||
+	    ((c2imr2 & ~EXTI1_C2IMR2_WKUP_MASK) != 0U) ||
+	    ((c2imr3 & ~EXTI1_C2IMR3_C1SEV) != 0U)) {
+		max_mode = PM_LP_STOP2;
+	}
+
+	/* Standby not allowed by CA35 */
+	if ((cpu1cr & PWR_CPU1CR_PDDS_D2) == 0U) {
+		max_mode = PM_LP_STOP2;
+	}
+
+	/* The low power mode are limited by other threads */
+	if (max_mode > pm_allowed)
+		max_mode = pm_allowed;
+
+	/* Trace to debug low power mode restriction */
+	LOG_MSG("[NS] [COPRO] [INF] max_mode=%x C2IMR1=%x C2IMR2=%x C2IMR3=%x CPU1CR=%x allowed=%x\n",
+		max_mode, c2imr1, c2imr2, c2imr3, cpu1cr, pm_allowed);
+
+	return max_mode;
+}
+
 static void _copro_suspend(void)
 {
-
+	enum pm_suspend_mode_t mode;
 	uint32_t rcc_c1bootrsts;
 	uint32_t rcc_c2bootrsts;
 	uint32_t pwr_cpu2cr;
@@ -200,6 +246,11 @@ static void _copro_suspend(void)
 
 	if (_copro_wait_D1_state(COPRO_TIMEOUT_MS, PWR_D1_DSTANDBY)) {
 		LOG_MSG("[NS] [COPRO] [ERR] D1 DStandby timeout\r\n");
+		return;
+	}
+
+	if (!pm_is_allowed) {
+		LOG_MSG("[NS] [COPRO] [INF] CPU SUSPEND refused, low power limited at D1 DStandby\r\n");
 		return;
 	}
 
@@ -215,7 +266,9 @@ static void _copro_suspend(void)
 		save_it_status();
 		save_stack();
 
-		err = psa_pm_suspend(PM_STOP2);
+		mode = _copro_get_pm_suspend_mode();
+		LOG_MSG("[NS] [COPRO] [INF] PM SUSPEND with mode %d\r\n",mode);
+		err = psa_pm_suspend(mode);
 
 		restore_stack();
 		restore_it_status();
@@ -255,15 +308,31 @@ void copro_ctrl_task(void *argument)
 	UNUSED_VARIABLE(argument);
 
 	for (;;) {
-		cmd = osThreadFlagsWait(COPRO_START | COPRO_STOP | COPRO_SUSPEND,
+		cmd = osThreadFlagsWait(COPRO_START | COPRO_STOP | COPRO_SUSPEND |
+					COPRO_PM_STOP2 | COPRO_PM_LP_STOP2 |
+					COPRO_PM_LPLV_STOP2 | COPRO_PM_STANDBY1,
 					osFlagsWaitAny, osWaitForever);
-		if (cmd == COPRO_START)
+		if (cmd == COPRO_START) {
 			_copro_start();
-		else if (cmd == COPRO_STOP)
+		} else if (cmd == COPRO_STOP) {
 			_copro_stop();
-		else if (cmd == COPRO_SUSPEND)
+		} else if (cmd == COPRO_SUSPEND) {
 			_copro_suspend();
-		else
+		} else if (cmd == COPRO_PM_STOP2) {
+			pm_is_allowed = true;
+			pm_allowed = PM_STOP2;
+		} else if (cmd == COPRO_PM_LP_STOP2) {
+			pm_is_allowed = true;
+			pm_allowed = PM_LP_STOP2;
+		} else if (cmd == COPRO_PM_LPLV_STOP2) {
+			pm_is_allowed = true;
+			pm_allowed = PM_LPLV_STOP2;
+		} else if (cmd == COPRO_PM_STANDBY1) {
+			pm_is_allowed = true;
+			pm_allowed = PM_STANDBY1;
+		} else if (cmd == COPRO_PM_DISABLED) {
+			pm_is_allowed = false;
+		} else
 			LOG_MSG("[NS] [COPRO] [ERR] unknown cmd\r\n");
 	}
 }
