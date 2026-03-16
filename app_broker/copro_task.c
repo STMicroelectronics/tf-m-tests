@@ -239,7 +239,7 @@ static enum pm_suspend_mode_t _copro_get_pm_suspend_mode(void)
 		max_mode = pm_allowed;
 
 	/* Trace to debug low power mode restriction */
-	LOG_MSG("[NS] [COPRO] [INF] max_mode=%x C2IMR1=%x C2IMR2=%x C2IMR3=%x CPU1CR=%x allowed=%x\n",
+	LOG_MSG("[NS] [COPRO] [INF] max_mode=%x C2IMR1=%x C2IMR2=%x C2IMR3=%x CPU1CR=%x allowed=%x\r\n",
 		max_mode, c2imr1, c2imr2, c2imr3, cpu1cr, pm_allowed);
 
 	return max_mode;
