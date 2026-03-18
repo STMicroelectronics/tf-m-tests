@@ -17,7 +17,7 @@
 #include "tfm_hal_multi_core.h"
 #include "tfm_plat_defs.h"
 #include "internal_status_code.h"
-#include "tfm_ns_notif.h"
+#include <service_api.h>
 #include "ns_evt.h"
 #include "tfm_peripherals_def.h"
 #include <service_api.h>

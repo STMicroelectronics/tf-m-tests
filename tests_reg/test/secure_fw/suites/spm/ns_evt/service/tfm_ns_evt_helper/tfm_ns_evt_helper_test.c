@@ -12,7 +12,7 @@
 #include "psa_manifest/tfm_ns_evt_helper_test.h"
 #include "tfm_hal_isolation.h"
 #include "utilities.h"
-#include "tfm_ns_notif.h"
+#include <service_api.h>
 #include "ns_evt.h"
 #include <service_api.h>
 /*
