@@ -20,6 +20,7 @@
 #include "tfm_ns_notif.h"
 #include "ns_evt.h"
 #include "tfm_peripherals_def.h"
+#include <service_api.h>
 
 void ns_evt_service_test_main(void *param)
 {

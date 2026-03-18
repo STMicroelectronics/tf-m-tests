@@ -14,6 +14,7 @@
 #include "utilities.h"
 #include "tfm_ns_notif.h"
 #include "ns_evt.h"
+#include <service_api.h>
 /*
  * Create a global const data, so that it is stored in code
  * section which is read only.
