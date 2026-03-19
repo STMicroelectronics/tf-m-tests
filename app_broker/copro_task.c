@@ -19,6 +19,7 @@
 #include <errno.h>
 
 #include "copro_task.h"
+#include "scmi_task.h"
 
 #define MSEC_PER_SEC		1000L
 
@@ -203,10 +204,17 @@ static void _copro_start(void)
 
 static void _copro_stop(void)
 {
-	int32_t err = _copro_cmd_wait(tfm_platform_cpu_stop, COPRO_ID_A35, CPU_OFFLINE);
+	int32_t err;
 
+	/* Disable CA35 SCMI Service to avoid processing useless request */
+	scmi_ca35_disable();
+
+	err = _copro_cmd_wait(tfm_platform_cpu_stop, COPRO_ID_A35, CPU_OFFLINE);
 	if (err)
 		LOG_MSG("[NS] [COPRO] [ERR] CPU STOP failure (%d)\r\n", err);
+
+	/* Clear CA35 SCMI shared memory, enable/clean CA35 SCMI pending request */
+	scmi_ca35_clean_enable();
 }
 
 static enum pm_suspend_mode_t _copro_get_pm_suspend_mode(void)
