@@ -26,6 +26,8 @@ target_link_libraries(tfm_test_suite_fwu_ns
     PRIVATE
         tfm_test_framework_ns
         platform_region_defs
+        RTX_OS
+        tfm_test_broker
 )
 
 target_compile_definitions(tfm_test_suite_fwu_ns

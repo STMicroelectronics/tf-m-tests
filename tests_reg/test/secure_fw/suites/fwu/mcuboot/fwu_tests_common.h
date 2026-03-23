@@ -15,6 +15,7 @@ extern "C" {
 #include "psa/update.h"
 #include "test_framework_helpers.h"
 
+void tfm_fwu_test_common_000(struct test_result_t *ret);
 void tfm_fwu_test_common_001(struct test_result_t *ret);
 void tfm_fwu_test_common_002(struct test_result_t *ret);
 void tfm_fwu_test_common_003(struct test_result_t *ret);
@@ -31,6 +32,7 @@ void tfm_fwu_test_common_013(struct test_result_t *ret);
 void tfm_fwu_test_common_014(struct test_result_t *ret);
 void tfm_fwu_test_common_015(struct test_result_t *ret);
 void tfm_fwu_test_common_016(struct test_result_t *ret);
+void tfm_fwu_test_common_999(struct test_result_t *ret);
 
 #ifdef __cplusplus
 }

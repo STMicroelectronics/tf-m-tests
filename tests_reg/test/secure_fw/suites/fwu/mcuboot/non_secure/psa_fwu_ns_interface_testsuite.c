@@ -10,6 +10,8 @@
 #include "../fwu_tests_common.h"
 
 static struct test_t psa_fwu_ns_tests[] = {
+    {&tfm_fwu_test_common_000, "TFM_NS_FWU_COPRO_STOP",
+    "Stopping Copro."},
     {&tfm_fwu_test_common_001, "TFM_NS_FWU_TEST_1001",
      "Functionity test."},
     {&tfm_fwu_test_common_002, "TFM_NS_FWU_TEST_1002",
@@ -30,6 +32,8 @@ static struct test_t psa_fwu_ns_tests[] = {
     {&tfm_fwu_test_common_007, "TFM_NS_FWU_TEST_1007",
      "Reboot interface"},
 #endif
+    {&tfm_fwu_test_common_999, "TFM_NS_FWU_COPRO_START",
+    "Starting Copro."},
 };
 
 void register_testsuite_ns_psa_fwu_interface(struct test_suite_t *p_test_suite)

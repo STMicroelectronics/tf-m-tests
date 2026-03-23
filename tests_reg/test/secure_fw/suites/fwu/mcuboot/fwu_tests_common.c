@@ -6,6 +6,8 @@
  */
 
 #include <string.h>
+#include <cmsis_os2.h>
+#include <copro_task.h>
 #include "fwu_tests_common.h"
 #include "region_defs.h"
 
@@ -203,6 +205,13 @@ static void test_tear_down(uint8_t test_suite_number, struct test_result_t *ret)
         TEST_LOG("Test: %d tear down failed.", test_suite_number);
         TEST_FAIL("Wrong component state is returned.");
     }
+}
+
+void tfm_fwu_test_common_000(struct test_result_t *ret)
+{
+    osThreadFlagsSet(tid_copro, COPRO_STOP);
+
+    ret->val = TEST_PASSED;
 }
 
 void tfm_fwu_test_common_001(struct test_result_t *ret)
@@ -1377,3 +1386,10 @@ void tfm_fwu_test_common_007(struct test_result_t *ret)
     ret->val = TEST_FAILED;
 }
 #endif
+
+void tfm_fwu_test_common_999(struct test_result_t *ret)
+{
+    osThreadFlagsSet(tid_copro, COPRO_START);
+
+    ret->val = TEST_PASSED;
+}
