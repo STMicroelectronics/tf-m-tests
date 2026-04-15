@@ -44,7 +44,7 @@
 //   <i> Defines the combined global dynamic memory size.
 //   <i> Default: 4096
 #ifndef OS_DYNAMIC_MEM_SIZE
-#define OS_DYNAMIC_MEM_SIZE         8192
+#define OS_DYNAMIC_MEM_SIZE         12488
 #endif
  
 //   <o>Kernel Tick Frequency [Hz] <1-1000000>
@@ -100,7 +100,7 @@
 //     <i> Defines maximum number of user threads that can be active at the same time.
 //     <i> Applies to user threads with system provided memory for control blocks.
 #ifndef OS_THREAD_NUM
-#define OS_THREAD_NUM               2
+#define OS_THREAD_NUM               3
 #endif
  
 //     <o>Number of user Threads with default Stack size <0-1000>
