@@ -28,6 +28,7 @@
 #include "semaphore.h"
 #include <wdt_task.h>
 #include <copro_task.h>
+#include <remoteproc_task.h>
 #include <util_macro.h>
 
 /**
@@ -198,8 +199,10 @@ int main(void)
     if (IS_ENABLED(TFM_PLATFORM_WDT_API))
 	    wdt_init();
 
-    if (IS_ENABLED(TFM_PLATFORM_CPU_API))
-	    copro_init();
+    if (IS_ENABLED(TFM_PLATFORM_CPU_API)) {
+            copro_init();
+            remoteproc_init();
+    }
 
     (void) osKernelStart();
 
