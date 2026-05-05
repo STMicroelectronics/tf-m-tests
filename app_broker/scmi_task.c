@@ -46,6 +46,10 @@ void tfm_sys_power_state_notifier(uint32_t agent_id, bool graceful, enum scmi_sy
 	switch (event) {
 	case  SYS_POWER_SHUTDOWN:
 		printf("agent %d %s SYS_POWER_SHUTDOWN\r\n", agent_id, graceful_str);
+		if (IS_ENABLED(TFM_PLATFORM_CPU_API)) {
+			printf("shutdown command\r\n");
+			osThreadFlagsSet(tid_copro, COPRO_SHUTDOWN);
+		}
 		break;
 
 	case  SYS_POWER_COLD_RESET:
