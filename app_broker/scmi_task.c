@@ -41,43 +41,47 @@ void scmi_ca35_clean_enable(void)
 
 void tfm_sys_power_state_notifier(uint32_t agent_id, bool graceful, enum scmi_sys_power event)
 {
-	const char *graceful_str = graceful ? "GRACEFUL" : "";
+	const char *graceful_str = graceful ? " - GRACEFUL" : "";
 
 	switch (event) {
 	case  SYS_POWER_SHUTDOWN:
-		printf("agent %d %s SYS_POWER_SHUTDOWN\r\n", agent_id, graceful_str);
+		printf("[NS] [SCMI] [INF] agent %d SYS_POWER_SHUTDOWN%s\r\n",
+		       agent_id, graceful_str);
 		if (IS_ENABLED(TFM_PLATFORM_CPU_API)) {
-			printf("shutdown command\r\n");
+			printf("[NS] [SCMI] [INF] shutdown command\r\n");
 			osThreadFlagsSet(tid_copro, COPRO_SHUTDOWN);
 		}
 		break;
 
 	case  SYS_POWER_COLD_RESET:
-		printf("agent %d %s SYS_POWER_COLD_RESET\r\n", agent_id, graceful_str);
+		printf("[NS] [SCMI] [INF] agent %d SYS_POWER_COLD_RESET%s\r\n",
+		       agent_id, graceful_str);
 		tfm_platform_system_reset();
 		break;
 
 	case  SYS_POWER_WARM_RESET:
-		printf("agent %d %s SYS_POWER_WARM_RESET\r\n", agent_id, graceful_str);
+		printf("[NS] [SCMI] [INF] agent %d SYS_POWER_WARM_RESET%s\r\n",
+		       agent_id, graceful_str);
 		if (IS_ENABLED(TFM_PLATFORM_CPU_API)) {
-			printf("stop command\r\n");
 			osThreadFlagsSet(tid_copro, COPRO_STOP);
-			printf("stop command done\r\n");
+			printf("[NS] [SCMI] [INF] stop command done\r\n");
 			osThreadFlagsSet(tid_copro, COPRO_START);
-			printf("start command done\r\n");
+			printf("[NS] [SCMI] [INF] start command done\r\n");
 		}
 		break;
 
 	case  SYS_POWER_SUSPEND:
-		printf("agent %d %s SYS_POWER_SUSPEND\r\n", agent_id, graceful_str);
+		printf("[NS] [SCMI] [INF] agent %d SYS_POWER_SUSPEND%s\r\n",
+		       agent_id, graceful_str);
 		if (IS_ENABLED(TFM_PLATFORM_CPU_API)) {
-			printf("suspend command\r\n");
+			printf("[NS] [SCMI] [INF] suspend command\r\n");
 			osThreadFlagsSet(tid_copro, COPRO_SUSPEND);
 		}
 		break;
 
 	default:
-		printf("Unsupported sys power notification %x\r\n", event);
+		printf("[NS] [SCMI] [ERR] Unsupported sys power notification %x%s\r\n",
+		       event, graceful_str);
 		break;
 	}
 }
