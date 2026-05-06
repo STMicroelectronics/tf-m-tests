@@ -331,6 +331,26 @@ static void _copro_suspend(void)
 	}
 }
 
+static void _copro_shutdown(void)
+{
+	uint32_t sleep;
+	int32_t err;
+
+	if (_copro_wait_D1_state(COPRO_TIMEOUT_MS, PWR_D1_DSTANDBY)) {
+		LOG_MSG("[NS] [COPRO] [ERR] D1 DStandby timeout\r\n");
+		return;
+	}
+
+	LOG_MSG("[NS] [COPRO] [INF] PM SHUTDOWN\r\n");
+
+	/* Suspend RTX thread scheduler, including Ticks */
+	sleep = osKernelSuspend();
+	err = psa_pm_power_off();
+	osKernelResume(sleep);
+
+	LOG_MSG("[NS] [COPRO] [ERR] PM SHUTDOWN failure (%d)\r\n", err);
+}
+
 void copro_ctrl_task(void *argument)
 {
 	uint32_t cmd;
@@ -338,7 +358,8 @@ void copro_ctrl_task(void *argument)
 	UNUSED_VARIABLE(argument);
 
 	for (;;) {
-		cmd = osThreadFlagsWait(COPRO_START | COPRO_STOP | COPRO_SUSPEND |
+		cmd = osThreadFlagsWait(COPRO_START | COPRO_STOP |
+					COPRO_SUSPEND | COPRO_SHUTDOWN |
 					COPRO_PM_STOP2 | COPRO_PM_LP_STOP2 |
 					COPRO_PM_LPLV_STOP2 | COPRO_PM_STANDBY1,
 					osFlagsWaitAny, osWaitForever);
@@ -348,6 +369,8 @@ void copro_ctrl_task(void *argument)
 			_copro_stop();
 		} else if (cmd == COPRO_SUSPEND) {
 			_copro_suspend();
+		} else if (cmd == COPRO_SHUTDOWN) {
+			_copro_shutdown();
 		} else if (cmd == COPRO_PM_STOP2) {
 			pm_is_allowed = true;
 			pm_allowed = PM_STOP2;

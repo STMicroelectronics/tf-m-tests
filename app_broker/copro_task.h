@@ -10,14 +10,15 @@
 
 #define COPRO_START	(0x1U)
 #define COPRO_STOP	(0x2U)
-#define COPRO_SUSPEND	(0x3U)
+#define COPRO_SUSPEND	(0x4U)
+#define COPRO_SHUTDOWN	(0x8U)
 
 /* Limit the next SUSPEND request done with COPRO_SUSPEND */
-#define COPRO_PM_STOP2		(0x4U)
-#define COPRO_PM_LP_STOP2	(0x5U)
-#define COPRO_PM_LPLV_STOP2	(0x6U)
-#define COPRO_PM_STANDBY1	(0x7U)
-#define COPRO_PM_DISABLED	(0x8U)
+#define COPRO_PM_STOP2		(0x010U)
+#define COPRO_PM_LP_STOP2	(0x020U)
+#define COPRO_PM_LPLV_STOP2	(0x040U)
+#define COPRO_PM_STANDBY1	(0x080U)
+#define COPRO_PM_DISABLED	(0x100U)
 
 extern osThreadId_t tid_copro;
 
