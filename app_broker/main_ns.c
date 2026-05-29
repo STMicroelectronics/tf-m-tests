@@ -200,8 +200,8 @@ int main(void)
 	    wdt_init();
 
     if (IS_ENABLED(TFM_PLATFORM_CPU_API)) {
-            copro_init();
             remoteproc_init();
+            copro_init();
     }
 
     (void) osKernelStart();
