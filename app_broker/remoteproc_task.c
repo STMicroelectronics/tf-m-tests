@@ -40,6 +40,8 @@ static struct remoteproc_thread_arg rproc_thd_arg;
 static osMessageQueueId_t rproc_msgq = NULL;
 static osMessageQueueId_t rproc_respq = NULL;
 static osMutexId_t rproc_cmd_lock = NULL;
+static osSemaphoreId_t rproc_crash_sem = NULL;
+static volatile enum rproc_crash_type rproc_last_crash_type;
 
 static int _remoteproc_status(const struct device *dev, int wait_status, uint32_t timeout_ms)
 {
@@ -117,12 +119,51 @@ static int _remoteproc_cmd(struct remoteproc_thread_arg * rproc_arg, enum remote
 	return 0;
 }
 
+void remoteproc_crash_action(void *data, enum rproc_crash_type type)
+{
+	UNUSED_VARIABLE(data);
+
+	rproc_last_crash_type = type;
+	osSemaphoreRelease(rproc_crash_sem);
+}
+
+void remoteproc_crash_task(void *arg)
+{
+	struct remoteproc_thread_arg *rproc_arg = arg;
+	osStatus_t status;
+	int err;
+
+	for (;;) {
+		status = osSemaphoreAcquire(rproc_crash_sem, osWaitForever);
+		if (status != osOK) {
+			LOG_MSG("[NS] [ERR] %s: crash semaphore failed (%d)\r\n",
+				rproc_arg->name, status);
+			continue;
+		}
+
+		LOG_MSG("[NS] [ERR] %s: %s crashed (type: %d)\r\n",
+			rproc_arg->name, rproc_arg->dev->name, rproc_last_crash_type);
+
+		err = remoteproc_send_cmd(RPROC_CMD_STOP);
+		if (err)
+			LOG_MSG("[NS] [ERR] %s: stop after crash failed (%d)\r\n",
+				rproc_arg->name, err);
+
+		err = remoteproc_send_cmd(RPROC_CMD_START);
+		if (err)
+			LOG_MSG("[NS] [ERR] %s: start after crash failed (%d)\r\n",
+				rproc_arg->name, err);
+	}
+}
+
 void remoteproc_task(void *arg)
 {
 	struct remoteproc_thread_arg *rproc_arg = arg;
 	struct remoteproc_msg msg;
 	struct remoteproc_resp resp;
 	osStatus_t status;
+
+	rproc_register_crash_cb(rproc_arg->dev, rproc_arg, remoteproc_crash_action);
 
 	for (;;) {
 		status = osMessageQueueGet(rproc_arg->mq, &msg, NULL, osWaitForever);
@@ -144,6 +185,14 @@ void remoteproc_task(void *arg)
 static osThreadFunc_t rproc_thd_fn = remoteproc_task;
 static const osThreadAttr_t rproc_thd_attr = {
 	.name = "remoteproc_thread",
+	.stack_size = 1024U,
+	.tz_module = ((TZ_ModuleId_t)TFM_DEFAULT_NSID),
+	.priority = osPriorityHigh,
+};
+
+static osThreadFunc_t rproc_crash_thd_fn = remoteproc_crash_task;
+static const osThreadAttr_t rproc_crash_thd_attr = {
+	.name = "remoteproc_crash_thread",
 	.stack_size = 1024U,
 	.tz_module = ((TZ_ModuleId_t)TFM_DEFAULT_NSID),
 	.priority = osPriorityHigh,
@@ -193,8 +242,9 @@ int remoteproc_send_cmd(enum remoteproc_cmd cmd)
  * Initialize the remoteproc service.
  *
  * This creates the command/response message queues used by clients calling
- * remoteproc_send_cmd(), the mutex that serializes synchronous commands. It then
- * starts the remoteproc command thread.
+ * remoteproc_send_cmd(), the mutex that serializes synchronous commands, and
+ * the semaphore used to defer crash handling out of interrupt context. It then
+ * starts the remoteproc command thread and the crash recovery thread.
  */
 int remoteproc_init(void)
 {
@@ -218,12 +268,23 @@ int remoteproc_init(void)
 		return -EINVAL;
 	}
 
+	rproc_crash_sem = osSemaphoreNew(1U, 0U, NULL);
+	if (!rproc_crash_sem) {
+		LOG_MSG("[NS] [ERR] remoteproc crash semaphore : failed\r\n");
+		return -EINVAL;
+	}
+
 	rproc_thd_arg.dev = DEVICE_DT_GET(DT_NODELABEL(a35_rproc));
 	rproc_thd_arg.mq = rproc_msgq;
 	rproc_thd_arg.name = rproc_thd_attr.name;
 
 	if (!osThreadNew(rproc_thd_fn, &rproc_thd_arg, &rproc_thd_attr)) {
 		LOG_MSG("[NS] [ERR] %s : failed\r\n", rproc_thd_attr.name);
+		return -EINVAL;
+	}
+
+	if (!osThreadNew(rproc_crash_thd_fn, &rproc_thd_arg, &rproc_crash_thd_attr)) {
+		LOG_MSG("[NS] [ERR] %s : failed\r\n", rproc_crash_thd_attr.name);
 		return -EINVAL;
 	}
 
