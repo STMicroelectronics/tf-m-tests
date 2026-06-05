@@ -7,7 +7,7 @@
 
 #include <string.h>
 #include <cmsis_os2.h>
-#include <copro_task.h>
+#include <remoteproc_task.h>
 #include "fwu_tests_common.h"
 #include "region_defs.h"
 
@@ -209,9 +209,10 @@ static void test_tear_down(uint8_t test_suite_number, struct test_result_t *ret)
 
 void tfm_fwu_test_common_000(struct test_result_t *ret)
 {
-    osThreadFlagsSet(tid_copro, COPRO_STOP);
-
-    ret->val = TEST_PASSED;
+    if (remoteproc_send_cmd(RPROC_CMD_STOP) != 0)
+        ret->val = TEST_FAILED;
+    else
+        ret->val = TEST_PASSED;
 }
 
 void tfm_fwu_test_common_001(struct test_result_t *ret)
@@ -1389,7 +1390,8 @@ void tfm_fwu_test_common_007(struct test_result_t *ret)
 
 void tfm_fwu_test_common_999(struct test_result_t *ret)
 {
-    osThreadFlagsSet(tid_copro, COPRO_START);
-
-    ret->val = TEST_PASSED;
+    if (remoteproc_send_cmd(RPROC_CMD_START) != 0)
+        ret->val = TEST_FAILED;
+    else
+        ret->val = TEST_PASSED;
 }
