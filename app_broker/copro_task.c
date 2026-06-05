@@ -14,18 +14,15 @@
 #include <stm32mp2xx_hal_pwr.h>
 #include <tfm_platform_system.h>
 #include <lib/mmio.h>
+#include <lib/timeout.h>
 #include <uapi/tfm_ioctl_api.h>
 #include <uapi/tfm_pm_api.h>
 #include <errno.h>
+#include <remoteproc_task.h>
 
 #include "copro_task.h"
-#include "scmi_task.h"
-
-#define MSEC_PER_SEC		1000L
 
 #define COPRO_TIMEOUT_MS	1 * MSEC_PER_SEC
-
-#define COPRO_ID_A35		0
 
 /*
  * The low power mode can be limited by CA35-NS directly only for TEST
@@ -43,17 +40,6 @@
 #define EXTI1_C2IMR1_PVM		BIT_32(17)
 #define EXTI1_C2IMR2_WKUP_MASK		GENMASK_32(57 % 32, 52 % 32)
 #define EXTI1_C2IMR3_C1SEV		BIT_32(65 % 32)
-
-typedef enum tfm_platform_err_t (*cpu_cmd_fn_t)(uint32_t, int32_t *);
-
-__WEAK const char *cpu_status_str[] = {
-	"offline",
-	"suspended",
-	"started",
-	"running",
-	"crashed",
-	"unknow",
-};
 
 typedef struct ns_context {
 	uint32_t VTOR_NS;
@@ -103,33 +89,6 @@ static void restore_stack(void)
 	__set_CONTROL(saved_context.CONTROL_NS);
 }
 
-static int32_t copro_wait_status(uint32_t cpu_id, struct cpu_info_res *cpu_info,
-				 uint32_t timeout_ms, int32_t status)
-{
-	uint32_t tk_timeout, tk_start, tk_curr;
-	int err;
-
-	/* Polling status */
-	tk_timeout = (osKernelGetTickFreq() * timeout_ms) / MSEC_PER_SEC;
-	tk_start = osKernelGetTickCount();
-
-	do {
-		err = tfm_platform_cpu_info(cpu_id, cpu_info);
-		if (err != TFM_PLATFORM_ERR_SUCCESS) {
-			cpu_info->status = CPU_LAST;
-			break;
-		}
-
-		if (cpu_info->status == status)
-			break;
-
-		tk_curr = osKernelGetTickCount();
-
-	} while ((tk_curr - tk_start) < tk_timeout);
-
-	return (cpu_info->status == status) ? 0 : -ETIMEDOUT;
-}
-
 static int32_t _copro_wait_D1_state(uint32_t timeout_ms, uint32_t state)
 {
 	uint32_t tk_timeout, tk_start, tk_curr;
@@ -150,53 +109,9 @@ static int32_t _copro_wait_D1_state(uint32_t timeout_ms, uint32_t state)
 	return -ETIMEDOUT;
 }
 
-static int32_t _copro_cmd_wait(cpu_cmd_fn_t cpu_fn, uint32_t cpu_id, int32_t wait_status)
-{
-	struct cpu_info_res cpu_info;
-	int32_t status, err;
-
-	if (!cpu_fn)
-		return -TFM_PLATFORM_ERR_INVALID_PARAM;
-
-	err = tfm_platform_cpu_info(cpu_id, &cpu_info);
-	if (err != TFM_PLATFORM_ERR_SUCCESS) {
-		LOG_MSG("[NS] [COPRO] [ERR] get cpu 0 info fail: %d\r\n", err);
-		return err;
-	}
-
-	if (cpu_info.status < 0 || cpu_info.status >= CPU_LAST) {
-		LOG_MSG("[NS] [COPRO] [ERR] cpu %s error %d\r\n",
-			cpu_info.name, cpu_info.status);
-		return TFM_PLATFORM_ERR_SYSTEM_ERROR;
-	}
-
-	if (cpu_info.status == wait_status) {
-		LOG_MSG("[NS] [COPRO] [INF] cpu %s is already %s\r\n",
-			cpu_info.name, cpu_status_str[cpu_info.status]);
-		return TFM_PLATFORM_ERR_SYSTEM_ERROR;
-	}
-
-	err = cpu_fn(cpu_id, &status);
-	if (err != TFM_PLATFORM_ERR_SUCCESS) {
-		LOG_MSG("[NS] [COPRO] [ERR] cpu %s cmd fail: %d\r\n", cpu_info.name, err);
-		return err;
-	}
-
-	err = copro_wait_status(cpu_id, &cpu_info, COPRO_TIMEOUT_MS, wait_status);
-	if (err) {
-		LOG_MSG("[NS] [COPRO] [ERR] cpu %s error %d\r\n", cpu_info.name, err);
-		return err;
-	}
-
-	LOG_MSG("[NS] [COPRO] [INF] cpu %s now %s\r\n",
-		cpu_info.name, cpu_status_str[cpu_info.status]);
-
-	return 0;
-}
-
 static void _copro_start(void)
 {
-	int32_t err = _copro_cmd_wait(tfm_platform_cpu_start, COPRO_ID_A35, CPU_RUNNING);
+	int32_t err = remoteproc_send_cmd(RPROC_CMD_START);
 
 	if (err)
 		LOG_MSG("[NS] [COPRO] [ERR] CPU START failure (%d)\r\n", err);
@@ -206,15 +121,10 @@ static void _copro_stop(void)
 {
 	int32_t err;
 
-	/* Disable CA35 SCMI Service to avoid processing useless request */
-	scmi_ca35_disable();
-
-	err = _copro_cmd_wait(tfm_platform_cpu_stop, COPRO_ID_A35, CPU_OFFLINE);
+	err = remoteproc_send_cmd(RPROC_CMD_STOP);
 	if (err)
-		LOG_MSG("[NS] [COPRO] [ERR] CPU STOP failure (%d)\r\n", err);
+		LOG_MSG("[NS] [COPRO] [ERR] remoteproc stop failed (%d)\r\n", err);
 
-	/* Clear CA35 SCMI shared memory, enable/clean CA35 SCMI pending request */
-	scmi_ca35_clean_enable();
 }
 
 static enum pm_suspend_mode_t _copro_get_pm_suspend_mode(void)
@@ -284,7 +194,7 @@ static void _copro_suspend(void)
 		return;
 	}
 
-	err = _copro_cmd_wait(tfm_platform_cpu_suspend, COPRO_ID_A35, CPU_SUSPENDED);
+	err = remoteproc_send_cmd(RPROC_CMD_SUSPEND);
 	if (err) {
 		LOG_MSG("[NS] [COPRO] [ERR] CPU SUSPEND failure (%d)\r\n", err);
 		return;
@@ -323,11 +233,11 @@ static void _copro_suspend(void)
 	else
 		LOG_MSG("[NS] [COPRO] [INF] Suspend aborted\r\n");
 
-	err = _copro_cmd_wait(tfm_platform_cpu_resume, COPRO_ID_A35, CPU_RUNNING);
+	err = remoteproc_send_cmd(RPROC_CMD_RESUME);
 	if (err) {
 		LOG_MSG("[NS] [COPRO] [ERR] CPU RESUME failure (%d)\r\n", err);
-		_copro_stop();
-		_copro_start();
+		remoteproc_send_cmd(RPROC_CMD_STOP);
+		remoteproc_send_cmd(RPROC_CMD_START);
 	}
 }
 
