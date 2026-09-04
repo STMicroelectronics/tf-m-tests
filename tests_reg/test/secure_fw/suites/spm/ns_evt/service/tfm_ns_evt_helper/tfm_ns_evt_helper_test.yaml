@@ -10,8 +10,9 @@
   "name": "TFM_SP_NS_EVT_HELPER_TEST",
   "type": "APPLICATION-ROT",
   "priority": "NORMAL",
-  "model": "IPC",
+  "model": "dual",
   "entry_point": "ns_evt_helper_test_main",
+  "entry_init": "ns_evt_helper_test_init",
   "stack_size": "0x0300",
   "services" : [
     {

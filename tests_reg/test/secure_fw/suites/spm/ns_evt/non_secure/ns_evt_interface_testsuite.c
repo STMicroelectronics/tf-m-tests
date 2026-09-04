@@ -14,9 +14,11 @@
 #include "psa_manifest/sid.h"
 
 /* List of tests */
+#ifndef NS_EVT_SFN_BACKEND
 static void tfm_ns_evt_test_1001(struct test_result_t *ret);
 static void tfm_ns_evt_test_1002(struct test_result_t *ret);
 static void tfm_ns_evt_test_1003(struct test_result_t *ret);
+#endif /* !NS_EVT_SFN_BACKEND */
 static void tfm_ns_evt_test_1004(struct test_result_t *ret);
 static void tfm_ns_evt_test_1005(struct test_result_t *ret);
 static void tfm_ns_evt_test_1006(struct test_result_t *ret);
@@ -24,12 +26,14 @@ static void tfm_ns_evt_test_1007(struct test_result_t *ret);
 
 
 static struct test_t ns_evt_tests[] = {
+#ifndef NS_EVT_SFN_BACKEND
     {&tfm_ns_evt_test_1001, "TFM_NS_EVT_TEST_1001",
      "Send an event to non secure from an unpriv partition"},
     {&tfm_ns_evt_test_1002, "TFM_NS_EVT_TEST_1002",
      "Send an event to non secure from an FILH unpriv handler"},
     {&tfm_ns_evt_test_1003, "TFM_NS_EVT_TEST_1003",
      "Fail to send an event not handled by an unpriv partition"},
+#endif /* !NS_EVT_SFN_BACKEND */
     {&tfm_ns_evt_test_1004, "TFM_NS_EVT_TEST_1004",
       "Send an event to non secure from a priv partition"},
     {&tfm_ns_evt_test_1005, "TFM_NS_EVT_TEST_1005",
@@ -55,6 +59,7 @@ void register_testsuite_ns_ns_evt_interface(struct test_suite_t *p_test_suite)
  * \brief
  *
  */
+#ifndef NS_EVT_SFN_BACKEND
 static void tfm_ns_evt_test_1001(struct test_result_t *ret)
 
 {
@@ -129,6 +134,7 @@ static void tfm_ns_evt_test_1003(struct test_result_t *ret)
   else
     ret->val = TEST_PASSED;
 }
+#endif /* !NS_EVT_SFN_BACKEND */
 
 /**
  * \brief

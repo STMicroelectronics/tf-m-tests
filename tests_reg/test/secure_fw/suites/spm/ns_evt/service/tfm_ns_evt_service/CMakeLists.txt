@@ -7,7 +7,7 @@
 
 add_library(tfm_psa_rot_partition_ns_evt_service STATIC)
 
-add_dependencies(tfm_psa_rot_partition_ipc_service manifest_tool)
+add_dependencies(tfm_psa_rot_partition_ns_evt_service manifest_tool)
 
 target_sources(tfm_psa_rot_partition_ns_evt_service
     PRIVATE
@@ -48,12 +48,9 @@ target_link_libraries(tfm_psa_rot_partition_ns_evt_service
 
 target_link_libraries(tfm_spm
     PRIVATE
-        tfm_psa_rot_partition_ipc_service
+        tfm_psa_rot_partition_ns_evt_service
 )
 
-target_compile_definitions(tfm_psa_rot_partition_ipc_service
-    PRIVATE
-)
 
 ############################ Partition Defs ####################################
 

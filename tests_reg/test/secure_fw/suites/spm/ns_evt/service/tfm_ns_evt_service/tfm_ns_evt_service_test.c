@@ -22,6 +22,8 @@
 #include "tfm_peripherals_def.h"
 #include <service_api.h>
 
+#if TFM_SP_NS_EVT_SERVICE_TEST_MODEL_IPC == 1
+
 void ns_evt_service_test_main(void *param)
 {
   uint32_t signals = 0;
@@ -49,6 +51,42 @@ void ns_evt_service_test_main(void *param)
     psa_reply(msg.handle, ret);
   }
 }
+
+#elif TFM_SP_NS_EVT_SERVICE_TEST_MODEL_SFN == 1
+
+psa_status_t ns_evt_service_test_init(void)
+{
+  psa_irq_enable(TEST_SEC_PRIV_IRQ_SIGNAL);
+  return PSA_SUCCESS;
+}
+
+psa_status_t ns_evt_service_priv_notif_ns_sfn(const psa_msg_t *msg)
+{
+  (void)msg;
+  return tfm_ns_notif(TFM_SP_NS_EVT_SERVICE_TEST_PRIV_CALL_NS_EVT);
+}
+
+psa_status_t ns_evt_service_flih_priv_notif_ns_sfn(const psa_msg_t *msg)
+{
+  (void)msg;
+  NVIC_SetPendingIRQ(TEST_SEC_PRIV_IRQ);
+  return PSA_SUCCESS;
+}
+
+psa_status_t ns_evt_service_flih_npriv_notif_ns_sfn(const psa_msg_t *msg)
+{
+  (void)msg;
+  NVIC_SetPendingIRQ(TEST_SEC_NPRIV_IRQ);
+  return PSA_SUCCESS;
+}
+
+psa_status_t ns_evt_service_try_notif_ns_sfn(const psa_msg_t *msg)
+{
+  (void)msg;
+  return tfm_ns_notif(TFM_SP_NS_EVT_HELPER_TEST_NPRIV_CALL_NS_EVT);
+}
+
+#endif /* TFM_SP_NS_EVT_SERVICE_TEST_MODEL_IPC == 1 */
 
 psa_flih_result_t test_sec_priv_irq_flih(void)
 {

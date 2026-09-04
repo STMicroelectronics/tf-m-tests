@@ -20,6 +20,8 @@
  * section which is read only.
  */
 
+#if TFM_SP_NS_EVT_HELPER_TEST_MODEL_IPC == 1
+
 void ns_evt_helper_test_main(void)
 {
     psa_msg_t msg;
@@ -40,6 +42,28 @@ void ns_evt_helper_test_main(void)
       psa_reply(msg.handle, ret);
     }
 }
+
+#elif TFM_SP_NS_EVT_HELPER_TEST_MODEL_SFN == 1
+
+psa_status_t ns_evt_helper_test_init(void)
+{
+  psa_irq_enable(TEST_SEC_NPRIV_IRQ_SIGNAL);
+  return PSA_SUCCESS;
+}
+
+psa_status_t ns_helper_notify_ns_sfn(const psa_msg_t *msg)
+{
+  (void)msg;
+  return tfm_ns_notif(TFM_SP_NS_EVT_HELPER_TEST_NPRIV_CALL_NS_EVT);
+}
+
+psa_status_t ns_helper_try_notify_ns_sfn(const psa_msg_t *msg)
+{
+  (void)msg;
+  return tfm_ns_notif(TFM_SP_NS_EVT_SERVICE_TEST_PRIV_CALL_NS_EVT);
+}
+
+#endif /* TFM_SP_NS_EVT_HELPER_TEST_MODEL_IPC == 1 */
 
 
 psa_flih_result_t test_sec_npriv_irq_flih(void)
