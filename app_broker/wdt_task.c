@@ -15,32 +15,15 @@
 
 #define MSEC_PER_SEC		1000L
 
-#ifndef CONFIG_WDT_TIMEOUT_MS
-#define CONFIG_WDT_TIMEOUT_MS	120 * MSEC_PER_SEC
-#endif
-
-#ifndef CONFIG_WDT_PING_MS
-#define CONFIG_WDT_PING_MS	80 * MSEC_PER_SEC
-#endif
+#define TIMEOUT_MIN_MS      1 * MSEC_PER_SEC
 
 void wdt_task(void *argument)
 {
-    struct wdt_timeout_cfg wdt_cfg;
     struct wdt_info wdt_info;
-    uint32_t tk_ping, tk_freq;
+    uint32_t ping_ms, tk_ping, tk_freq;
     int err;
 
     UNUSED_VARIABLE(argument);
-
-    tk_freq = osKernelGetTickFreq();
-    tk_ping = (tk_freq * CONFIG_WDT_PING_MS) / MSEC_PER_SEC;
-
-    wdt_cfg.timeout = CONFIG_WDT_TIMEOUT_MS;
-    err = tfm_platform_wdt_set(&wdt_cfg);
-    if (err != TFM_PLATFORM_ERR_SUCCESS) {
-        LOG_MSG("[NS] [ERR] watchdog set timeout fail:%d\r\n", err);
-        goto out_err;
-    }
 
     err = tfm_platform_wdt_info(&wdt_info);
     if (err != TFM_PLATFORM_ERR_SUCCESS) {
@@ -56,7 +39,17 @@ void wdt_task(void *argument)
         }
     }
 
-    LOG_MSG("[NS] [INF] watchdog timeout: %dms\r\n", wdt_cfg.timeout);
+    if (wdt_info.timeout < TIMEOUT_MIN_MS) {
+        LOG_MSG("[NS] [ERR] watchdog timeout too small\r\n");
+        goto out_err;
+    }
+
+    tk_freq = osKernelGetTickFreq();
+    ping_ms = (wdt_info.timeout / 4) * 3;
+    tk_ping = (tk_freq * ping_ms) / MSEC_PER_SEC;
+
+    LOG_MSG("[NS] [INF] watchdog timeout: %dms ping: %dms\r\n",
+            wdt_info.timeout, ping_ms);
 
     while (true) {
         err = tfm_platform_wdt_ping();
