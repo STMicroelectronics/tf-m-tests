@@ -25,49 +25,49 @@
 
 void wdt_task(void *argument)
 {
-	struct wdt_timeout_cfg wdt_cfg;
-	struct wdt_info wdt_info;
-	uint32_t tk_ping, tk_freq;
-	int err;
+    struct wdt_timeout_cfg wdt_cfg;
+    struct wdt_info wdt_info;
+    uint32_t tk_ping, tk_freq;
+    int err;
 
-	UNUSED_VARIABLE(argument);
+    UNUSED_VARIABLE(argument);
 
-	tk_freq = osKernelGetTickFreq();
-	tk_ping = (tk_freq * CONFIG_WDT_PING_MS) / MSEC_PER_SEC;
+    tk_freq = osKernelGetTickFreq();
+    tk_ping = (tk_freq * CONFIG_WDT_PING_MS) / MSEC_PER_SEC;
 
-	wdt_cfg.timeout = CONFIG_WDT_TIMEOUT_MS;
-	err = tfm_platform_wdt_set(&wdt_cfg);
-	if (err != TFM_PLATFORM_ERR_SUCCESS) {
-		LOG_MSG("[NS] [ERR] watchdog set timeout fail:%d\r\n", err);
-		goto out_err;
-	}
+    wdt_cfg.timeout = CONFIG_WDT_TIMEOUT_MS;
+    err = tfm_platform_wdt_set(&wdt_cfg);
+    if (err != TFM_PLATFORM_ERR_SUCCESS) {
+        LOG_MSG("[NS] [ERR] watchdog set timeout fail:%d\r\n", err);
+        goto out_err;
+    }
 
-	err = tfm_platform_wdt_info(&wdt_info);
-	if (err != TFM_PLATFORM_ERR_SUCCESS) {
-		LOG_MSG("[NS] [ERR] watchdog get info fail:%d\r\n", err);
-		goto out_err;
-	}
+    err = tfm_platform_wdt_info(&wdt_info);
+    if (err != TFM_PLATFORM_ERR_SUCCESS) {
+        LOG_MSG("[NS] [ERR] watchdog get info fail:%d\r\n", err);
+        goto out_err;
+    }
 
-	if (wdt_info.status == WDT_DISABLED) {
-		err = tfm_platform_wdt_start();
-		if (err != TFM_PLATFORM_ERR_SUCCESS) {
-			LOG_MSG("[NS] [ERR] watchdog start fail:%d\r\n", err);
-			goto out_err;
-		}
-	}
+    if (wdt_info.status == WDT_DISABLED) {
+        err = tfm_platform_wdt_start();
+        if (err != TFM_PLATFORM_ERR_SUCCESS) {
+            LOG_MSG("[NS] [ERR] watchdog start fail:%d\r\n", err);
+            goto out_err;
+        }
+    }
 
-	LOG_MSG("[NS] [INF] watchdog timeout: %dms\r\n", wdt_cfg.timeout);
+    LOG_MSG("[NS] [INF] watchdog timeout: %dms\r\n", wdt_cfg.timeout);
 
-	while (true) {
-		err = tfm_platform_wdt_ping();
-		if (err != TFM_PLATFORM_ERR_SUCCESS)
-			LOG_MSG("[NS] [ERR] watchdog ping fail:%d\r\n", err);
+    while (true) {
+        err = tfm_platform_wdt_ping();
+        if (err != TFM_PLATFORM_ERR_SUCCESS)
+            LOG_MSG("[NS] [ERR] watchdog ping fail:%d\r\n", err);
 
-		osDelay(tk_ping);
-	}
+        osDelay(tk_ping);
+    }
 
 out_err:
-	osThreadExit();
+    osThreadExit();
 }
 
 static osThreadFunc_t wdt_thread_func = wdt_task;
@@ -80,7 +80,7 @@ static const osThreadAttr_t wdt_thread_attr = {
 
 int wdt_init(void)
 {
-	osThreadNew(wdt_thread_func, NULL, &wdt_thread_attr);
+    osThreadNew(wdt_thread_func, NULL, &wdt_thread_attr);
 
-	return 0;
+    return 0;
 }
